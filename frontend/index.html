@@ -39,10 +39,10 @@
     <button data-section="recomendador" class="nav-btn">2 · Recomendar destino</button>
     <button data-section="ficha" class="nav-btn">3 · Ficha de destino</button>
     <button data-section="oportunidad" class="nav-btn">4 · Oportunidades</button>
-    <button data-section="diagnostico" class="nav-btn">5 · Problemas a tener en cuenta</button>
+    <button data-section="diagnostico" class="nav-btn">5 · Experiencia del viajero</button>
     <button data-section="ranking" class="nav-btn">6 · Comparar destinos</button>
     <button data-section="tendencia" class="nav-btn">7 · Actualidad</button>
-    <button data-section="contexto" class="nav-btn">8 · Contexto turístico</button>
+    <button data-section="contexto" class="nav-btn">8 · Mercado turístico</button>
   </nav>
   <div class="sidebar-footer">
     <button id="btn-metodologia" class="link-btn">ℹ️ Nota metodológica</button>
@@ -53,19 +53,53 @@
 <main class="app-main">
 
   <section id="sec-portada" class="view is-active">
-    <h1>¿Dónde deberías poner tu atención hoy?</h1>
-    <p class="view-sub">Oportunidades para recomendar, destinos a vigilar y la actualidad antes de hablar con un cliente.</p>
-    <div class="alert-grid" id="portada-alertas"></div>
+    <h1>¿Qué quieres hacer hoy?</h1>
+    <p class="view-sub">Tu punto de partida para recomendar, comparar y estar al día antes de hablar con un cliente.</p>
 
-    <div class="accesos-rapidos" id="accesos-rapidos">
-      <button type="button" class="acceso-rapido" data-ir="recomendador">🔎 Recomendar destino</button>
-      <button type="button" class="acceso-rapido" data-ir="oportunidad">📈 Ver oportunidades</button>
-      <button type="button" class="acceso-rapido" data-ir="diagnostico">⚠️ Problemas a tener en cuenta</button>
-      <button type="button" class="acceso-rapido" data-ir="ranking">⚖️ Comparar destinos</button>
-      <button type="button" class="acceso-rapido" data-ir="ficha">📍 Ficha de un destino</button>
+    <div class="menu-acciones" id="menu-acciones">
+      <button type="button" class="accion-card" data-ir="recomendador">
+        <span class="accion-card-icono">🔎</span>
+        <span class="accion-card-titulo">Recomendar un destino</span>
+        <span class="accion-card-desc">Filtra por lo que más le importa a tu cliente y encuentra el alojamiento o restaurante que mejor encaja.</span>
+        <span class="accion-card-cta">Empezar →</span>
+      </button>
+      <button type="button" class="accion-card" data-ir="ficha">
+        <span class="accion-card-icono">📍</span>
+        <span class="accion-card-titulo">Explorar un destino</span>
+        <span class="accion-card-desc">Oportunidad, experiencia del viajero, actualidad y establecimientos reales de una comunidad, todo junto.</span>
+        <span class="accion-card-cta">Ver ficha →</span>
+      </button>
+      <button type="button" class="accion-card" data-ir="ranking">
+        <span class="accion-card-icono">⚖️</span>
+        <span class="accion-card-titulo">Comparar destinos</span>
+        <span class="accion-card-desc">Ordena las 19 comunidades por satisfacción general o por el aspecto que más le importe a tu cliente.</span>
+        <span class="accion-card-cta">Comparar →</span>
+      </button>
+      <button type="button" class="accion-card" data-ir="oportunidad">
+        <span class="accion-card-icono">📈</span>
+        <span class="accion-card-titulo">Ver oportunidades</span>
+        <span class="accion-card-desc">Qué comunidades merece la pena promocionar ahora, y cuáles conviene renegociar o vigilar.</span>
+        <span class="accion-card-cta">Explorar →</span>
+      </button>
+      <button type="button" class="accion-card" data-ir="diagnostico">
+        <span class="accion-card-icono">💬</span>
+        <span class="accion-card-titulo">Consultar experiencia del viajero</span>
+        <span class="accion-card-desc">Qué valoran mejor y peor los viajeros de cada comunidad, aspecto a aspecto, según sus reseñas reales.</span>
+        <span class="accion-card-cta">Consultar →</span>
+      </button>
+      <button type="button" class="accion-card" data-ir="contexto">
+        <span class="accion-card-icono">📊</span>
+        <span class="accion-card-titulo">Consultar el mercado turístico</span>
+        <span class="accion-card-desc">Cifras oficiales de turismo: volumen del mes, evolución histórica y comparación entre comunidades.</span>
+        <span class="accion-card-cta">Consultar →</span>
+      </button>
     </div>
 
-    <h2 class="contexto-seccion-titulo" style="margin-top:1.6rem">Comunidad a comunidad</h2>
+    <h2 class="contexto-seccion-titulo" style="margin-top:2.2rem">Actualidad de hoy</h2>
+    <div class="alert-grid" id="portada-alertas"></div>
+
+    <h2 class="contexto-seccion-titulo" style="margin-top:2.2rem">Explora España por destino</h2>
+    <p class="muted" style="margin-top:-.6rem">Recorre las 19 comunidades y entra en la ficha completa de la que te interese.</p>
     <div class="ccaa-carrusel">
       <button type="button" id="carrusel-prev" class="carrusel-flecha" aria-label="Comunidad anterior">‹</button>
       <div class="ccaa-pista-viewport" id="ccaa-pista-viewport">
@@ -116,9 +150,11 @@
   </section>
 
   <section id="sec-diagnostico" class="view">
-    <h1>Problemas a tener en cuenta</h1>
-    <p class="view-sub">Qué deberías saber antes de recomendar cada destino: sus mejores y peores aspectos, según las reseñas reales.</p>
+    <h1>Experiencia del viajero</h1>
+    <p class="view-sub">¿Qué valoran mejor y peor los viajeros en cada destino? La voz de los propios viajeros, aspecto a aspecto y comunidad a comunidad.</p>
+    <p class="muted" style="margin:-.6rem 0 1.4rem">Todo lo de esta página mide satisfacción y percepción según las reseñas reales: no son incidencias objetivas del destino, son valoraciones de quien lo ha visitado.</p>
 
+    <h2 class="contexto-seccion-titulo">Visión general: comparativa entre comunidades</h2>
     <div class="panel">
       <div class="panel-titulo-info">
         <h3>Satisfacción de los viajeros por aspecto</h3>
@@ -129,14 +165,17 @@
       </div>
     </div>
 
-    <div class="panel" style="margin-top:1rem">
-      <h2 class="panel-titulo-grande">Percepción de la experiencia turística por CCAA</h2>
+    <h2 class="contexto-seccion-titulo" style="margin-top:2rem">Análisis por destino</h2>
+    <div class="panel">
       <div class="field-row" style="margin-bottom:0">
-        <label class="filtro-ccaa">Ver el ranking de
+        <label class="filtro-ccaa">Elige un destino
           <select id="diag-ccaa"><option value="">España (todas las CCAA)</option></select>
         </label>
       </div>
+      <p class="muted" id="diag-nota-comparacion" style="margin-top:.2rem"></p>
       <div class="chart-box chart-box-ancho"><canvas id="chart-aspectos"></canvas></div>
+      <div class="leyenda" id="diag-leyenda-aspectos"></div>
+      <div id="diag-aspectos-advertir"></div>
     </div>
   </section>
 
@@ -194,18 +233,18 @@
   </section>
 
   <section id="sec-contexto" class="view">
-    <h1>Contexto turístico</h1>
-    <p class="view-sub">El dato oficial primero: lo que pasa de verdad, según fuentes institucionales (AENA, INE, EGATUR, FRONTUR).</p>
+    <h1>Mercado turístico</h1>
+    <p class="view-sub">¿Cómo se está comportando el turismo? El dato oficial, según fuentes institucionales (AENA, INE, EGATUR, FRONTUR).</p>
 
     <div class="contexto-seccion">
-      <h2 class="contexto-seccion-titulo">1 · Así está el mes más reciente</h2>
+      <h2 class="contexto-seccion-titulo">1 · Situación actual</h2>
       <p class="resumen-ejecutivo" id="contexto-resumen" hidden></p>
       <div class="kpi-row" id="contexto-kpis"></div>
       <div class="panel hallazgo-panel" id="contexto-hallazgo"></div>
     </div>
 
     <div class="contexto-seccion">
-      <h2 class="contexto-seccion-titulo">2 · Cómo ha evolucionado con los años</h2>
+      <h2 class="contexto-seccion-titulo">2 · Evolución</h2>
       <div class="historico-layout">
         <div class="panel">
           <h3>Pernoctaciones regladas por año</h3>
@@ -221,24 +260,33 @@
         <p class="muted">La misma cifra de pernoctaciones (noches reservadas), pero mes a mes en vez de por año: se ve la caída del confinamiento y la forma de la recuperación.</p>
         <div class="chart-box chart-box-ancho"><canvas id="chart-mensual"></canvas></div>
       </div>
+
+      <div class="panel" id="contexto-anual" style="margin-top:1rem"></div>
     </div>
 
     <div class="contexto-seccion">
-      <h2 class="contexto-seccion-titulo">3 · Comparando las 19 comunidades entre sí</h2>
+      <h2 class="contexto-seccion-titulo">3 · Comparación territorial</h2>
       <div class="panel">
-        <h3>Qué CCAA tiene más margen y cuál está más presionada</h3>
-        <p class="muted">Volumen de turismo (escala) frente a cuánto pesa sobre su población (intensidad). Ambos ejes son percentiles 0-1 entre las 19 CCAA, del último año disponible.</p>
-        <div class="benchmark-layout">
-          <div class="chart-box chart-box-cuadrado"><canvas id="chart-benchmark"></canvas></div>
-          <div id="benchmark-leyenda"></div>
-        </div>
+        <h3>Cómo compara un destino con la media nacional</h3>
+        <p class="muted">Mismo mes, mismos indicadores oficiales: elige una comunidad para ver su valor, su puesto entre las CCAA con dato y su variación interanual propia.</p>
+        <label class="filtro-ccaa">Elige un destino
+          <select id="contexto-ccaa"><option value="">España (media nacional)</option></select>
+        </label>
+        <div id="contexto-territorial"></div>
       </div>
     </div>
 
     <div class="contexto-seccion">
-      <h2 class="contexto-seccion-titulo">4 · El año que cerró</h2>
-      <p class="muted" style="margin-top:-.6rem">Un cierre anual aparte, no comparable mes a mes con los indicadores de la sección 1.</p>
-      <div class="panel" id="contexto-anual"></div>
+      <h2 class="contexto-seccion-titulo">4 · Escala vs presión turística</h2>
+      <div class="panel">
+        <h3>Qué CCAA tiene más margen y cuál está más presionada</h3>
+        <p class="muted">Cada punto es una CCAA, del último año disponible. El eje horizontal (escala) es cuánto turismo mueve en volumen, comparado con las otras 18; el eje vertical (intensidad) es cuánto pesa ese turismo sobre su propia población. Ambos son percentiles 0-1: 1 significa "la CCAA más alta de las 19" en ese eje, no un porcentaje ni una nota.</p>
+        <div class="benchmark-layout">
+          <div class="chart-box chart-box-cuadrado"><canvas id="chart-benchmark"></canvas></div>
+          <div id="benchmark-leyenda"></div>
+        </div>
+        <p class="muted" style="margin-top:.6rem">Pincha un punto para abrir la ficha completa de esa comunidad.</p>
+      </div>
     </div>
   </section>
 

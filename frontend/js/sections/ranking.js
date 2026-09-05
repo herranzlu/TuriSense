@@ -96,5 +96,12 @@ export async function render() {
     el("ranking-metrica").insertAdjacentHTML("afterbegin", `<option value="general" selected>Satisfacción general</option>`);
     el("ranking-metrica").addEventListener("change", cargar);
   }
+  // Si se llegó aquí pinchando una barra en "Experiencia del viajero", se abre
+  // directamente el ranking de ese mismo aspecto.
+  const preseleccion = sessionStorage.getItem("ranking_metrica");
+  if (preseleccion) {
+    el("ranking-metrica").value = preseleccion;
+    sessionStorage.removeItem("ranking_metrica"); // solo la primera vez: si luego se cambia a mano, no debe volver a imponerse
+  }
   await cargar();
 }

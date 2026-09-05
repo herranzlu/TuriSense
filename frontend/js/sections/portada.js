@@ -346,9 +346,9 @@ export async function render() {
   el("btn-reanudar-carrete").addEventListener("click", reanudarCarrete);
   window.addEventListener("resize", centrarPista);
 
-  // Accesos rápidos: llevan a la tarea siguiente sin tener que buscarla en el menú.
-  el("accesos-rapidos").addEventListener("click", (ev) => {
-    const boton = ev.target.closest(".acceso-rapido");
+  // Menú de acciones: la primera pantalla de trabajo, no una lista de accesos discretos.
+  el("menu-acciones").addEventListener("click", (ev) => {
+    const boton = ev.target.closest(".accion-card");
     if (boton) location.hash = boton.dataset.ir;
   });
   // "Ver ficha completa": pasa la CCAA que se está viendo ahora mismo en el carrusel.

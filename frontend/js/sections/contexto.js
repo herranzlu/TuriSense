@@ -1,10 +1,11 @@
 import { api } from "../api.js";
-import { el, fmtNum } from "../utils.js";
+import { el, fmtNum, llenarSelect, conCarga } from "../utils.js";
 
 let cargado = false;
 let chartAnual = null;
 let chartMensual = null;
 let chartBenchmark = null;
+let periodoActual = null; // se fija con la respuesta nacional de /contexto, para comparar el mismo mes al elegir una CCAA
 
 const COLOR_CUADRANTE = {
   escala_alta__intensidad_alta: "#D40E14",
@@ -145,6 +146,50 @@ function renderEstacionalidad(hist) {
   `;
 }
 
+function renderTerritorial(ccaa, data) {
+  const panel = el("contexto-territorial");
+  if (!ccaa) {
+    panel.innerHTML = `<p class="muted" style="margin-top:1rem">Elige una comunidad arriba para compararla con la media nacional.</p>`;
+    return;
+  }
+
+  const filas = data.indicadores_mensuales
+    .filter((i) => i.valor_ccaa !== null && i.valor_ccaa !== undefined)
+    .map((i) => {
+      const yoy = i.variacion_interanual_pct_ccaa;
+      const yoyHtml =
+        yoy === null || yoy === undefined
+          ? ""
+          : `<span class="kpi-yoy ${yoy >= 0 ? "sube" : "baja"}">${yoy >= 0 ? "▲" : "▼"} ${Math.abs(yoy).toFixed(1)}% interanual</span>`;
+      return `
+      <div class="kpi-card">
+        <div class="kpi-valor">${fmtNum(i.valor_ccaa)}${yoyHtml}</div>
+        <div class="kpi-label">
+          ${i.unidad}<br>${i.etiqueta}<br>
+          <span class="muted">puesto ${i.puesto_ccaa} de ${i.total_ccaa_con_dato} · media España: ${fmtNum(i.valor_nacional)}</span>
+        </div>
+      </div>`;
+    })
+    .join("");
+
+  panel.innerHTML = `
+    <div class="kpi-row" style="margin-top:1rem">${filas || '<p class="muted">Sin datos oficiales para esta comunidad en el último periodo.</p>'}</div>
+    <button type="button" id="btn-ver-ficha-contexto" class="btn-secundario" style="margin-top:.4rem">Ver ficha completa de ${ccaa}</button>
+  `;
+  el("btn-ver-ficha-contexto").addEventListener("click", () => {
+    sessionStorage.setItem("ficha_ccaa", ccaa);
+    location.hash = "ficha";
+  });
+}
+
+async function cargarTerritorial(ccaa) {
+  if (!ccaa) return renderTerritorial(null);
+  const qs = new URLSearchParams({ ccaa });
+  if (periodoActual) qs.set("periodo", periodoActual);
+  const data = await conCarga(api.get(`/contexto?${qs.toString()}`));
+  renderTerritorial(ccaa, data);
+}
+
 function renderBenchmark(hist) {
   const grupos = {};
   for (const c of hist.benchmark_ccaa) {
@@ -168,13 +213,23 @@ function renderBenchmark(hist) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      onClick: (ev, elementos, chart) => {
+        if (!elementos.length) return;
+        const punto = chart.data.datasets[elementos[0].datasetIndex].data[elementos[0].index];
+        if (!punto?.ccaa) return;
+        sessionStorage.setItem("ficha_ccaa", punto.ccaa);
+        location.hash = "ficha";
+      },
+      onHover: (ev, elementos) => {
+        ev.native.target.style.cursor = elementos.length ? "pointer" : "default";
+      },
       plugins: {
         legend: { display: false },
         tooltip: { callbacks: { label: (ctx2) => `${ctx2.raw.ccaa}: ${ctx2.dataset.label}` } },
       },
       scales: {
-        x: { min: 0, max: 1, title: { display: true, text: "Escala (percentil entre las 19 CCAA)" } },
-        y: { min: 0, max: 1, title: { display: true, text: "Intensidad respecto a su población (percentil)" } },
+        x: { min: 0, max: 1, title: { display: true, text: "Escala: volumen de turismo (percentil entre las 19 CCAA)" } },
+        y: { min: 0, max: 1, title: { display: true, text: "Intensidad: turismo respecto a su población (percentil)" } },
       },
     },
   });
@@ -213,7 +268,10 @@ export async function render() {
   if (cargado) return;
   cargado = true;
 
-  const [data, hist] = await Promise.all([api.get("/contexto"), api.get("/contexto/historico")]);
+  const [data, hist, { ccaa: listaCcaa }] = await conCarga(
+    Promise.all([api.get("/contexto"), api.get("/contexto/historico"), api.get("/ccaa")]),
+  );
+  periodoActual = data.periodo;
 
   renderKpis(data);
   renderHallazgo(hist);
@@ -222,4 +280,9 @@ export async function render() {
   renderChartMensual(hist);
   renderBenchmark(hist);
   renderAnualCierre(data);
+
+  llenarSelect(el("contexto-ccaa"), listaCcaa.map((c) => c.ccaa));
+  el("contexto-ccaa").insertAdjacentHTML("afterbegin", `<option value="" selected>España (media nacional)</option>`);
+  el("contexto-ccaa").addEventListener("change", (ev) => cargarTerritorial(ev.target.value));
+  renderTerritorial(null);
 }

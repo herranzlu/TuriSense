@@ -3,6 +3,7 @@ import { el, llenarSelect, fmtPct, interpolarColor, degradadoPositivoPorValor, r
 
 let chart = null;
 let inicializado = false;
+let matrizCache = null; // se rellena en cargarHeatmap(); se reutiliza para calcular la posición de una CCAA en un aspecto, sin repetir la llamada
 
 // Verde, no rojo: esta tabla es "% positivo" (no quejas), así que un degradado de
 // rojo daba a entender que se estaba hablando de algo negativo. Más verde e intenso
@@ -32,6 +33,7 @@ function rangoPorColumna(matriz, aspectos) {
 
 async function cargarHeatmap() {
   const data = await conCarga(api.get("/aspectos/matriz"));
+  matrizCache = data;
   const rango = rangoPorColumna(data.matriz, data.aspectos);
 
   // La celda [0,0] necesita ser sticky en las dos direcciones a la vez (columna Y fila),
@@ -75,35 +77,103 @@ function abrirInfoHeatmap() {
   el("modal-detalle").hidden = false;
 }
 
+// Puesto (1 = mejor) de una CCAA en un aspecto concreto, entre las 19: reutiliza la
+// misma matriz que ya carga el mapa de calor, no vuelve a pedir nada al servidor.
+function posicionEnAspecto(ccaa, aspectoKey) {
+  if (!matrizCache) return null;
+  const valores = matrizCache.matriz
+    .map((f) => ({ ccaa: f.ccaa, pct: f.aspectos[aspectoKey]?.pct_positivo ?? null }))
+    .filter((v) => v.pct !== null)
+    .sort((a, b) => b.pct - a.pct);
+  const puesto = valores.findIndex((v) => v.ccaa === ccaa) + 1;
+  return puesto > 0 ? { puesto, total: valores.length } : null;
+}
+
+// "Aspectos a tener en cuenta": exclusivamente los peor valorados de ESTA comunidad
+// (nunca se convierte en "problema" ni "incidencia", solo en lo que el dato mide de
+// verdad: menor satisfacción relativa dentro de esta comunidad).
+function bloqueAspectosAdvertir(ccaa, aspectosOrdenados) {
+  if (!ccaa) return "";
+  const peores = aspectosOrdenados.filter((a) => a.pct_positivo !== null).slice(0, 2);
+  if (!peores.length) return "";
+  const filas = peores
+    .map((a) => {
+      const pos = posicionEnAspecto(ccaa, a.aspecto);
+      const posTxt = pos ? ` · puesto ${pos.puesto} de ${pos.total} entre las CCAA` : "";
+      return `<li><strong>${a.etiqueta}</strong>: ${fmtPct(a.pct_positivo)} de valoraciones positivas${posTxt}${a.evidencia_suficiente ? "" : " " + "(poca evidencia)"}</li>`;
+    })
+    .join("");
+  return `
+    <div class="panel" style="margin-top:1rem; border-left:3px solid var(--rojo-primario)">
+      <h3>Aspectos a tener en cuenta antes de recomendar ${ccaa}</h3>
+      <p class="muted">Los aspectos peor valorados por los viajeros en esta comunidad (no son incidencias objetivas, son menor satisfacción relativa):</p>
+      <ul>${filas}</ul>
+    </div>`;
+}
+
 async function cargarRanking(ccaa) {
   const qs = ccaa ? `?ccaa=${encodeURIComponent(ccaa)}` : "";
-  const data = await conCarga(api.get(`/aspectos/ranking${qs}`));
+  // Con una CCAA elegida, se pide también el agregado nacional (sin filtrar) para
+  // poder comparar cada aspecto contra la media del país en la misma gráfica.
+  const [data, nacional] = await conCarga(
+    Promise.all([api.get(`/aspectos/ranking${qs}`), ccaa ? api.get("/aspectos/ranking") : Promise.resolve(null)]),
+  );
 
   const ctx = el("chart-aspectos").getContext("2d");
   const etiquetas = data.aspectos.map((a) => a.etiqueta);
   const valores = data.aspectos.map((a) => (a.pct_positivo !== null ? +(a.pct_positivo * 100).toFixed(1) : null));
   const degradado = degradadoPositivoPorValor(valores);
   const colores = data.aspectos.map((a, i) => (a.evidencia_suficiente ? degradado[i] : "#D7D2C3"));
-  const { min, max } = rangoAjustado(valores);
+
+  const datasets = [{ label: ccaa || "España", data: valores, backgroundColor: colores, borderRadius: 4 }];
+  let todosLosValores = valores;
+
+  if (nacional) {
+    const pctNacionalPorAspecto = Object.fromEntries(nacional.aspectos.map((a) => [a.aspecto, a.pct_positivo]));
+    const valoresNacional = data.aspectos.map((a) => {
+      const v = pctNacionalPorAspecto[a.aspecto];
+      return v !== undefined && v !== null ? +(v * 100).toFixed(1) : null;
+    });
+    datasets.push({ label: "Media nacional", data: valoresNacional, backgroundColor: "#C9BFAF", borderRadius: 4 });
+    todosLosValores = valores.concat(valoresNacional);
+    el("diag-nota-comparacion").textContent = "La barra clara es la media nacional del mismo aspecto, para comparar.";
+    el("diag-leyenda-aspectos").innerHTML = `
+      <span class="leyenda-item"><span class="leyenda-swatch" style="background:${VERDE_INTENSO}"></span> ${ccaa}</span>
+      <span class="leyenda-item"><span class="leyenda-swatch" style="background:#C9BFAF"></span> Media nacional</span>`;
+  } else {
+    el("diag-nota-comparacion").textContent = "";
+    el("diag-leyenda-aspectos").innerHTML = "";
+  }
+
+  const { min, max } = rangoAjustado(todosLosValores);
 
   if (chart) chart.destroy();
   chart = new Chart(ctx, {
     type: "bar",
-    data: {
-      labels: etiquetas,
-      datasets: [{ label: "% positivo", data: valores, backgroundColor: colores, borderRadius: 4 }],
-    },
+    data: { labels: etiquetas, datasets },
     options: {
       indexAxis: "y",
       responsive: true,
       maintainAspectRatio: false,
+      onClick: (ev, elementos) => {
+        if (!elementos.length) return;
+        const aspectoKey = data.aspectos[elementos[0].index].aspecto;
+        sessionStorage.setItem("ranking_metrica", aspectoKey);
+        location.hash = "ranking";
+      },
       plugins: {
         legend: { display: false },
-        title: { display: true, text: `${data.ccaa} · peor aspecto arriba` },
+        title: { display: true, text: `${data.ccaa} · peor aspecto arriba (pincha una barra para ver su ranking completo)` },
       },
-      scales: { x: { min, max, title: { display: true, text: "% positivo" } } },
+      // beginAtZero:false es necesario a propósito: Chart.js lo pone a true por
+      // defecto en un gráfico de barras, y eso pelea con un min/max explícito
+      // distinto de 0 (con 2 datasets, llegaba a calcular la barra con base negativa
+      // y fuera del todo del área visible: por eso no se veía ninguna barra).
+      scales: { x: { min, max, beginAtZero: false, title: { display: true, text: "% positivo" } } },
     },
   });
+
+  el("diag-aspectos-advertir").innerHTML = bloqueAspectosAdvertir(ccaa || null, data.aspectos);
 }
 
 // Explicación en una frase, redactada para un ejecutivo, no un volcado de datos: solo

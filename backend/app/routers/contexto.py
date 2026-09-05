@@ -48,7 +48,10 @@ def _media_ponderada(grupo: pd.DataFrame, columna: str) -> tuple[float | None, b
 
 
 @router.get("/contexto", summary="Contexto turístico oficial: indicadores mensuales nacionales, ponderados por población")
-def contexto(periodo: str | None = Query(default=None, description="AAAA-MM. Por defecto, el último periodo disponible.")):
+def contexto(
+    periodo: str | None = Query(default=None, description="AAAA-MM. Por defecto, el último periodo disponible."),
+    ccaa: str | None = Query(default=None, description="Si se indica, añade a cada indicador su lectura para esa CCAA (valor, puesto entre las CCAA con dato y variación interanual propia)."),
+):
     oficial = data_loader.cargar_oficial_mensual()
     anual = data_loader.cargar_contexto_anual()
 
@@ -68,6 +71,19 @@ def contexto(periodo: str | None = Query(default=None, description="AAAA-MM. Por
             if not con_poblacion.empty:
                 valor_absoluto = round(float((con_poblacion["value"] * con_poblacion["population_midyear"] / 1000).sum()))
 
+        # Lectura propia de una CCAA (opcional): puesto calculado directamente sobre las
+        # CCAA con dato ese mes para este indicador, no un percentil aparte precalculado.
+        valor_ccaa = puesto_ccaa = total_ccaa_con_dato = variacion_ccaa = None
+        if ccaa:
+            con_dato = grupo.dropna(subset=["value"]).sort_values("value", ascending=False).reset_index()
+            fila_ccaa = con_dato[con_dato["ccaa"] == ccaa]
+            if not fila_ccaa.empty:
+                valor_ccaa = round(float(fila_ccaa.iloc[0]["value"]), 2)
+                puesto_ccaa = int(fila_ccaa.index[0]) + 1
+                total_ccaa_con_dato = int(len(con_dato))
+                yoy_ccaa = fila_ccaa.iloc[0]["yoy_change"]
+                variacion_ccaa = round(float(yoy_ccaa), 1) if pd.notna(yoy_ccaa) else None
+
         indicadores_por_id[ind_id] = {
             "indicator_id": ind_id,
             "etiqueta": fila["indicator_label"],
@@ -80,6 +96,10 @@ def contexto(periodo: str | None = Query(default=None, description="AAAA-MM. Por
             "ponderado_por_poblacion": ponderado,
             "provisional": bool(grupo["provisional_flag"].any()),
             "n_ccaa_con_dato": int(grupo["ccaa"].nunique()),
+            "valor_ccaa": valor_ccaa,
+            "puesto_ccaa": puesto_ccaa,
+            "total_ccaa_con_dato": total_ccaa_con_dato,
+            "variacion_interanual_pct_ccaa": variacion_ccaa,
         }
     # en el orden narrativo de INDICADORES_DEFECTO, no el alfabético que da groupby
     indicadores = [indicadores_por_id[i] for i in INDICADORES_DEFECTO if i in indicadores_por_id]
