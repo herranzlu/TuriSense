@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: turisense-dashboard
+    name: turisense-agente
     runtime: python
     plan: free
     # Sin rootDir a propósito: config.py resuelve data/ y frontend/ como hermanos
