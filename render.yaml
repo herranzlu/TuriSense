@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: turisense-dashboard
+    runtime: python
+    plan: free
+    # Sin rootDir a propósito: config.py resuelve data/ y frontend/ como hermanos
+    # de backend/, así que el build y el arranque se hacen desde la raíz del repo.
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --app-dir backend
+    envVars:
+      # Sin esto, Render usa su Python por defecto (más nuevo que el 3.11 con el
+      # que se probó todo en local) y pandas/pyarrow pueden no tener build lista.
+      - key: PYTHON_VERSION
+        value: 3.11.9

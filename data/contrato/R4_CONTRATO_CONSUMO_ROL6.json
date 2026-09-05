@@ -1,0 +1,48 @@
+{
+  "phase_version": "R4-F9-v1.0.0",
+  "owner": "Rol 4 / Nicolás Díaz",
+  "consumer": "Rol 6",
+  "tables": {
+    "official_monthly": {
+      "key": [
+        "ccaa_code",
+        "period",
+        "indicator_id"
+      ],
+      "rows": 17556
+    },
+    "opinion_global": {
+      "key": [
+        "source",
+        "ccaa_code",
+        "period",
+        "indicator_id"
+      ],
+      "rows": 9492
+    },
+    "opinion_aspect": {
+      "key": [
+        "source",
+        "ccaa_code",
+        "period",
+        "aspecto",
+        "indicator_id"
+      ],
+      "rows": 66484
+    },
+    "structural_annual": {
+      "key": [
+        "ccaa_code",
+        "year"
+      ],
+      "rows": 133
+    }
+  },
+  "non_negotiable": [
+    "Mostrar unidad, fuente, soporte y flags junto al valor.",
+    "Mantener plataforma como filtro obligatorio en opinión.",
+    "Ocultar o marcar las celdas de opinión con support_ge_30=false.",
+    "No presentar datos anuales como mensuales.",
+    "El Rol 6 decide pantallas, gráficos e interacción."
+  ]
+}

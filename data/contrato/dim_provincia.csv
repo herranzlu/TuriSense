@@ -1,0 +1,53 @@
+﻿province_code,province,ccaa_code,ccaa,is_study_scope,record_key
+01,Araba/Álava,16,País Vasco,True,01
+02,Albacete,08,Castilla-La Mancha,True,02
+03,Alicante/Alacant,10,Comunitat Valenciana,True,03
+04,Almería,01,Andalucía,True,04
+05,Ávila,07,Castilla y León,True,05
+06,Badajoz,11,Extremadura,True,06
+07,Illes Balears,04,Illes Balears,True,07
+08,Barcelona,09,Cataluña,True,08
+09,Burgos,07,Castilla y León,True,09
+10,Cáceres,11,Extremadura,True,10
+11,Cádiz,01,Andalucía,True,11
+12,Castellón/Castelló,10,Comunitat Valenciana,True,12
+13,Ciudad Real,08,Castilla-La Mancha,True,13
+14,Córdoba,01,Andalucía,True,14
+15,A Coruña,12,Galicia,True,15
+16,Cuenca,08,Castilla-La Mancha,True,16
+17,Girona,09,Cataluña,True,17
+18,Granada,01,Andalucía,True,18
+19,Guadalajara,08,Castilla-La Mancha,True,19
+20,Gipuzkoa,16,País Vasco,True,20
+21,Huelva,01,Andalucía,True,21
+22,Huesca,02,Aragón,True,22
+23,Jaén,01,Andalucía,True,23
+24,León,07,Castilla y León,True,24
+25,Lleida,09,Cataluña,True,25
+26,La Rioja,17,La Rioja,True,26
+27,Lugo,12,Galicia,True,27
+28,Madrid,13,Comunidad de Madrid,True,28
+29,Málaga,01,Andalucía,True,29
+30,Murcia,14,Región de Murcia,True,30
+31,Navarra,15,Comunidad Foral de Navarra,True,31
+32,Ourense,12,Galicia,True,32
+33,Asturias,03,Principado de Asturias,True,33
+34,Palencia,07,Castilla y León,True,34
+35,Las Palmas,05,Canarias,True,35
+36,Pontevedra,12,Galicia,True,36
+37,Salamanca,07,Castilla y León,True,37
+38,Santa Cruz de Tenerife,05,Canarias,True,38
+39,Cantabria,06,Cantabria,True,39
+40,Segovia,07,Castilla y León,True,40
+41,Sevilla,01,Andalucía,True,41
+42,Soria,07,Castilla y León,True,42
+43,Tarragona,09,Cataluña,True,43
+44,Teruel,02,Aragón,True,44
+45,Toledo,08,Castilla-La Mancha,True,45
+46,Valencia/València,10,Comunitat Valenciana,True,46
+47,Valladolid,07,Castilla y León,True,47
+48,Bizkaia,16,País Vasco,True,48
+49,Zamora,07,Castilla y León,True,49
+50,Zaragoza,02,Aragón,True,50
+51,Ceuta,18,Ceuta,True,51
+52,Melilla,19,Melilla,True,52

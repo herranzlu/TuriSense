@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TuriSense · Cuadro de mando</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<div id="barra-carga" class="barra-carga" aria-hidden="true"></div>
+<div class="fondo-difuminado"></div>
+
+<div class="app-shell">
+<header class="mobile-topbar">
+  <span class="brand-lockup">
+    <svg class="logo-tui" viewBox="0 0 178 70" aria-hidden="true"><path d="M12 10 C12 34 30 48 50 48 C62 48 70 43 76 34" fill="none" stroke="#D40E14" stroke-width="13" stroke-linecap="round"/><circle cx="86" cy="16" r="9" fill="#D40E14"/><text x="102" y="46" font-family="Arial, sans-serif" font-weight="800" font-size="34" fill="#D40E14">TUI</text></svg>
+    <span class="brand-mark">TuriSense</span>
+  </span>
+  <button id="btn-hamburguesa" class="btn-hamburguesa" aria-label="Abrir menú" aria-expanded="false" aria-controls="app-sidebar">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+<div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div>
+<aside class="app-sidebar" id="app-sidebar">
+  <div class="brand">
+    <span class="brand-lockup">
+      <svg class="logo-tui" viewBox="0 0 178 70" aria-hidden="true"><path d="M12 10 C12 34 30 48 50 48 C62 48 70 43 76 34" fill="none" stroke="#D40E14" stroke-width="13" stroke-linecap="round"/><circle cx="86" cy="16" r="9" fill="#D40E14"/><text x="102" y="46" font-family="Arial, sans-serif" font-weight="800" font-size="34" fill="#D40E14">TUI</text></svg>
+      <span class="brand-mark">TuriSense</span>
+    </span>
+    <span class="brand-sub">Cuadro de mando</span>
+  </div>
+  <nav class="app-nav" id="app-nav">
+    <button data-section="portada" class="nav-btn is-active">1 · Actualidad</button>
+    <button data-section="oportunidad" class="nav-btn">2 · Mapa de oportunidad</button>
+    <button data-section="diagnostico" class="nav-btn">3 · Fortalezas y debilidades</button>
+    <button data-section="ranking" class="nav-btn">4 · Ranking territorial</button>
+    <button data-section="recomendador" class="nav-btn">5 · Recomendador</button>
+    <button data-section="contexto" class="nav-btn">6 · Contexto turístico</button>
+    <button data-section="tendencia" class="nav-btn">7 · Tendencia</button>
+  </nav>
+  <div class="sidebar-footer">
+    <button id="btn-metodologia" class="link-btn">ℹ️ Nota metodológica</button>
+    <span class="muted">Uso interno, no para el tribunal</span>
+  </div>
+</aside>
+
+<main class="app-main">
+
+  <section id="sec-portada" class="view is-active">
+    <h1>Alertas de hoy</h1>
+    <p class="view-sub">Lo que habría que mirar ahora mismo, no una tabla más de números.</p>
+    <div class="alert-grid" id="portada-alertas"></div>
+
+    <div class="ccaa-carrusel" style="margin-top:2rem">
+      <button type="button" id="carrusel-prev" class="carrusel-flecha" aria-label="Comunidad anterior">‹</button>
+      <div class="ccaa-pista-viewport" id="ccaa-pista-viewport">
+        <div class="ccaa-pista-continua" id="ccaa-pista-continua"></div>
+      </div>
+      <button type="button" id="carrusel-next" class="carrusel-flecha" aria-label="Comunidad siguiente">›</button>
+    </div>
+    <div class="ccaa-info-activa" id="ccaa-info-activa">
+      <h2 id="ccaa-tarjeta-nombre"></h2>
+      <div class="ccaa-tarjeta-stats" id="ccaa-tarjeta-stats"></div>
+      <button type="button" id="btn-ver-todos-ccaa" class="link-btn">Ver todos los indicadores →</button>
+    </div>
+    <div class="carrusel-puntos" id="carrusel-puntos"></div>
+    <p class="muted carrusel-aviso-manual" id="carrusel-aviso-manual" hidden>
+      Navegación manual · <button type="button" id="btn-reanudar-carrete" class="link-btn">▶ reanudar avance automático</button>
+    </p>
+  </section>
+
+  <section id="sec-oportunidad" class="view">
+    <h1>Mapa de oportunidad</h1>
+    <p class="view-sub">Dónde cruzan mala fama y mucha presión turística, y dónde pasa justo lo contrario.</p>
+
+    <div id="oportunidad-resumen"></div>
+
+    <div class="mapa-layout">
+      <div class="panel mapa-panel">
+        <h3>Qué hacer en cada CCAA</h3>
+        <div id="mapa-oportunidad" class="mapa"></div>
+        <div class="leyenda-acciones" id="mapa-oportunidad-leyenda"></div>
+      </div>
+      <div class="panel tabla-panel">
+        <p class="muted" id="oportunidad-filtro-aviso" style="min-height:1.1em">Toca una comunidad, en el mapa o en la tabla, para ver solo la suya.</p>
+        <div class="tabla-scroll">
+          <table class="tabla-ccaa" id="tabla-oportunidad">
+            <thead><tr><th>#</th><th>CCAA</th><th>Satisfacción</th><th>Presión</th><th>Aspecto motor</th><th>Acción</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:1rem">
+      <h3>Satisfacción frente a presión turística</h3>
+      <p class="muted">Cada punto es una comunidad: cuanto más a la derecha, más presión turística soporta; cuanto más arriba, mejor valoran los viajeros su estancia. Las líneas discontinuas marcan la media de España.</p>
+      <div class="chart-box chart-box-cuadrado"><canvas id="chart-oportunidad-scatter"></canvas></div>
+    </div>
+  </section>
+
+  <section id="sec-diagnostico" class="view">
+    <h1>Fortalezas y debilidades</h1>
+
+    <div class="panel">
+      <div class="panel-titulo-info">
+        <h3>Satisfacción de los viajeros por aspecto</h3>
+        <button type="button" id="btn-info-heatmap" class="btn-info" aria-label="Cómo leer este mapa de calor">i</button>
+      </div>
+      <div class="tabla-scroll">
+        <table class="heatmap" id="tabla-heatmap"></table>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:1rem">
+      <h2 class="panel-titulo-grande">Percepción de la experiencia turística por CCAA</h2>
+      <div class="field-row" style="margin-bottom:0">
+        <label class="filtro-ccaa">Ver el ranking de
+          <select id="diag-ccaa"><option value="">España (todas las CCAA)</option></select>
+        </label>
+      </div>
+      <div class="chart-box chart-box-ancho"><canvas id="chart-aspectos"></canvas></div>
+    </div>
+  </section>
+
+  <section id="sec-ranking" class="view">
+    <h1>Ranking territorial</h1>
+    <p class="view-sub">Compara la satisfacción turística entre comunidades y decide dónde priorizar.</p>
+    <label class="filtro-ccaa">Ver ranking por
+      <select id="ranking-metrica"></select>
+    </label>
+    <div class="panel">
+      <div class="chart-box chart-box-ranking"><canvas id="chart-ranking"></canvas></div>
+    </div>
+  </section>
+
+  <section id="sec-recomendador" class="view">
+    <h1>Recomendador</h1>
+    <p class="view-sub">Encuentra el alojamiento o restaurante que mejor encaja con lo que buscas, dando prioridad a los destinos menos saturados si así lo decides.</p>
+    <div class="recomendador-layout">
+      <form id="form-recomendador" class="panel form-recomendador">
+        <div class="field-row">
+          <label>Territorio
+            <select id="rec-territorio"><option value="todas">Toda España</option></select>
+          </label>
+          <label>Ciudad
+            <select id="rec-ciudad"><option value="todas">Cualquiera</option></select>
+          </label>
+          <label>Tipo de experiencia
+            <select id="rec-tipo"><option value="todas">Cualquiera</option></select>
+          </label>
+        </div>
+        <p class="muted" style="margin:-.4rem 0 .6rem">No hay coordenadas exactas en los datos: filtrar por ciudad es lo más parecido a "cerca de mí" que se puede ofrecer sin inventar un dato que no existe.</p>
+        <p class="muted" style="margin:0 0 .6rem">Marca lo que más te importe: cada deslizador refleja qué tan bien valoran los viajeros ESE aspecto en sus reseñas (no es un filtro exacto de kilómetros o euros). Si no tocas nada, se ordena por valoración general.</p>
+        <div class="aspectos-sliders" id="rec-aspectos"></div>
+        <label class="anti-masif">
+          Evitar los destinos más masificados: <span id="rec-antimasif-val">0.0</span>
+          <input type="range" id="rec-antimasif" min="0" max="1" step="0.05" value="0" />
+        </label>
+        <button type="submit" class="btn-primary">Buscar lugares</button>
+      </form>
+      <div class="panel resultados-recomendador">
+        <p class="muted" id="rec-meta">Ajusta lo que te importa y pulsa «Buscar lugares».</p>
+        <div id="rec-resultados"></div>
+        <button type="button" id="rec-ver-mas" class="btn-secundario btn-ver-mas" hidden>Ver 15 más</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-contexto" class="view">
+    <h1>Contexto turístico</h1>
+    <p class="view-sub">El dato oficial primero: lo que pasa de verdad, según fuentes institucionales (AENA, INE, EGATUR, FRONTUR).</p>
+
+    <div class="contexto-seccion">
+      <h2 class="contexto-seccion-titulo">1 · Así está el mes más reciente</h2>
+      <p class="resumen-ejecutivo" id="contexto-resumen" hidden></p>
+      <div class="kpi-row" id="contexto-kpis"></div>
+      <div class="panel hallazgo-panel" id="contexto-hallazgo"></div>
+    </div>
+
+    <div class="contexto-seccion">
+      <h2 class="contexto-seccion-titulo">2 · Cómo ha evolucionado con los años</h2>
+      <div class="historico-layout">
+        <div class="panel">
+          <h3>Pernoctaciones regladas por año</h3>
+          <p class="muted">Noches de hotel/alojamiento reglado reservadas en toda España, sumadas cada año.</p>
+          <div class="chart-box"><canvas id="chart-anual"></canvas></div>
+          <div class="leyenda" id="leyenda-anual"></div>
+        </div>
+        <div class="panel" id="contexto-estacionalidad"></div>
+      </div>
+
+      <div class="panel" style="margin-top:1rem">
+        <h3>Mes a mes, 2019-2025</h3>
+        <p class="muted">La misma cifra de pernoctaciones (noches reservadas), pero mes a mes en vez de por año: se ve la caída del confinamiento y la forma de la recuperación.</p>
+        <div class="chart-box chart-box-ancho"><canvas id="chart-mensual"></canvas></div>
+      </div>
+    </div>
+
+    <div class="contexto-seccion">
+      <h2 class="contexto-seccion-titulo">3 · Comparando las 19 comunidades entre sí</h2>
+      <div class="panel">
+        <h3>Qué CCAA tiene más margen y cuál está más presionada</h3>
+        <p class="muted">Volumen de turismo (escala) frente a cuánto pesa sobre su población (intensidad). Ambos ejes son percentiles 0-1 entre las 19 CCAA, del último año disponible.</p>
+        <div class="benchmark-layout">
+          <div class="chart-box chart-box-cuadrado"><canvas id="chart-benchmark"></canvas></div>
+          <div id="benchmark-leyenda"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="contexto-seccion">
+      <h2 class="contexto-seccion-titulo">4 · El año que cerró</h2>
+      <p class="muted" style="margin-top:-.6rem">Un cierre anual aparte, no comparable mes a mes con los indicadores de la sección 1.</p>
+      <div class="panel" id="contexto-anual"></div>
+    </div>
+  </section>
+
+  <section id="sec-tendencia" class="view">
+    <h1>Tendencia</h1>
+    <p class="view-sub">Detectarlo aquí, mes a mes, permite actuar antes de que se convierta en una crisis de reputación pública.</p>
+
+    <div class="panel" id="tendencia-alertas">
+      <div class="cargando-spinner"><span class="spinner" aria-hidden="true"></span> Buscando qué está empeorando ahora mismo en toda España…</div>
+    </div>
+
+    <div class="panel" style="margin-top:1rem">
+      <div class="field-row">
+        <label>CCAA <select id="tend-ccaa"></select></label>
+        <label>Aspecto <select id="tend-aspecto"></select></label>
+        <label>Plataforma <select id="tend-source"></select></label>
+      </div>
+      <p id="tend-racha" class="racha-aviso"></p>
+      <div class="leyenda" id="tend-leyenda"></div>
+      <p class="muted tend-explicacion">Cada punto es un mes: cuanto más alto, mayor fue el porcentaje de reseñas que se quejaron de este aspecto ese mes. Una línea que sube es una señal de alarma; una línea que baja, una mejora.</p>
+      <div class="chart-box chart-box-ancho"><canvas id="chart-tendencia"></canvas></div>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<div id="modal-metodologia" class="modal" hidden>
+  <div class="modal-card">
+    <button id="modal-close" class="modal-close" aria-label="Cerrar">×</button>
+    <h2>Antes de presentar esto</h2>
+    <ul>
+      <li>El sentimiento no es realmente por aspecto en el 100% de los casos: de las frases con dos o más aspectos, una fracción tiene aspectos que discrepan entre sí.</li>
+      <li>El diccionario de aspectos es solo en español; el inglés es una parte significativa del corpus y coincide peor.</li>
+      <li><strong>Masificación apenas se detecta</strong> como mención explícita en el texto de las reseñas. Es justo el tema central de la tesis, y el que menos evidencia directa tiene.</li>
+      <li>Una puntuación alta de oportunidad no es una nota ni un % de visitantes descontentos: es una prioridad de actuación <em>relativa</em> entre las 19 CCAA.</li>
+      <li>Las celdas marcadas como «poca evidencia» descansan sobre menos reseñas de las recomendadas: se muestran igual, pero atenuadas, nunca como titular.</li>
+    </ul>
+  </div>
+</div>
+
+<div id="modal-detalle" class="modal" hidden>
+  <div class="modal-card">
+    <button id="modal-detalle-close" class="modal-close" aria-label="Cerrar">×</button>
+    <div id="modal-detalle-contenido"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
