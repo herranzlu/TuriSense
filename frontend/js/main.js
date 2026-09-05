@@ -1,5 +1,6 @@
 import { el, conCarga } from "./utils.js";
 import * as portada from "./sections/portada.js";
+import * as ficha from "./sections/ficha.js";
 import * as recomendador from "./sections/recomendador.js";
 import * as ranking from "./sections/ranking.js";
 import * as oportunidad from "./sections/oportunidad.js";
@@ -7,7 +8,7 @@ import * as diagnostico from "./sections/diagnostico.js";
 import * as contexto from "./sections/contexto.js";
 import * as tendencia from "./sections/tendencia.js";
 
-const SECCIONES = { portada, recomendador, ranking, oportunidad, diagnostico, contexto, tendencia };
+const SECCIONES = { portada, ficha, recomendador, ranking, oportunidad, diagnostico, contexto, tendencia };
 
 async function activar(nombre) {
   document.querySelectorAll(".nav-btn").forEach((b) => b.classList.toggle("is-active", b.dataset.section === nombre));

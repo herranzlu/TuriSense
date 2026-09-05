@@ -142,13 +142,18 @@ def tendencia(
     "/tendencia/alertas",
     summary="Las combinaciones CCAA/aspecto con la racha de empeoramiento más larga activa ahora mismo, en toda España",
 )
-def alertas_tendencia(top_n: int = Query(default=6, ge=1, le=20)):
+def alertas_tendencia(
+    top_n: int = Query(default=6, ge=1, le=20),
+    ccaa: str | None = Query(default=None, description="Si se da, solo rachas de esta CCAA (sin limitar a las 20 más largas de España)."),
+):
     base = data_loader.cargar_opinion_aspecto()
     base = base[base["indicator_id"] == "negative_share"]
+    if ccaa:
+        base = base[base["ccaa"] == ccaa]
     agregado = _agregar_todas_combinaciones(base)
 
     resultados = []
-    for (ccaa, aspecto), grupo in agregado.groupby(["ccaa", "aspecto"], observed=True):
+    for (ccaa_fila, aspecto), grupo in agregado.groupby(["ccaa", "aspecto"], observed=True):
         # Misma agregación, misma ventana (24 meses) y el mismo cálculo de racha que
         # /api/tendencia con source=todas por defecto: si no, una alerta puede anunciar
         # una racha que ni se ve en la propia gráfica que se abre al pincharla.
@@ -160,7 +165,7 @@ def alertas_tendencia(top_n: int = Query(default=6, ge=1, le=20)):
         ultimo_valido = next(p for p in reversed(serie) if p["evidencia_suficiente"])
         resultados.append(
             {
-                "ccaa": ccaa,
+                "ccaa": ccaa_fila,
                 "aspecto": aspecto,
                 "etiqueta_aspecto": config.ASPECTO_LABEL_BY_KEY.get(aspecto, aspecto),
                 "meses_consecutivos_empeorando": racha,
@@ -171,4 +176,7 @@ def alertas_tendencia(top_n: int = Query(default=6, ge=1, le=20)):
         )
 
     resultados.sort(key=lambda r: (-r["meses_consecutivos_empeorando"], -r["tasa_negativa_actual"]))
-    return {"alertas": resultados[:top_n], "total_combinaciones_con_racha": len(resultados)}
+    # Filtrando por una CCAA concreta no tiene sentido cortar a las "top_n de España":
+    # como mucho hay 11 aspectos en juego, se devuelven todas sus rachas activas.
+    devueltas = resultados if ccaa else resultados[:top_n]
+    return {"alertas": devueltas, "total_combinaciones_con_racha": len(resultados)}

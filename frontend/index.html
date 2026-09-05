@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>TuriSense · Cuadro de mando</title>
+<title>TuriSense Agente · Herramienta para agentes de viaje</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -35,28 +35,38 @@
     <span class="brand-sub">Cuadro de mando</span>
   </div>
   <nav class="app-nav" id="app-nav">
-    <button data-section="portada" class="nav-btn is-active">1 · Actualidad</button>
-    <button data-section="oportunidad" class="nav-btn">2 · Mapa de oportunidad</button>
-    <button data-section="diagnostico" class="nav-btn">3 · Fortalezas y debilidades</button>
-    <button data-section="ranking" class="nav-btn">4 · Ranking territorial</button>
-    <button data-section="recomendador" class="nav-btn">5 · Recomendador</button>
-    <button data-section="contexto" class="nav-btn">6 · Contexto turístico</button>
-    <button data-section="tendencia" class="nav-btn">7 · Tendencia</button>
+    <button data-section="portada" class="nav-btn is-active">1 · Inicio</button>
+    <button data-section="recomendador" class="nav-btn">2 · Recomendar destino</button>
+    <button data-section="ficha" class="nav-btn">3 · Ficha de destino</button>
+    <button data-section="oportunidad" class="nav-btn">4 · Oportunidades</button>
+    <button data-section="diagnostico" class="nav-btn">5 · Problemas a tener en cuenta</button>
+    <button data-section="ranking" class="nav-btn">6 · Comparar destinos</button>
+    <button data-section="tendencia" class="nav-btn">7 · Actualidad</button>
+    <button data-section="contexto" class="nav-btn">8 · Contexto turístico</button>
   </nav>
   <div class="sidebar-footer">
     <button id="btn-metodologia" class="link-btn">ℹ️ Nota metodológica</button>
-    <span class="muted">Uso interno, no para el tribunal</span>
+    <span class="muted">TuriSense Agente · TUI</span>
   </div>
 </aside>
 
 <main class="app-main">
 
   <section id="sec-portada" class="view is-active">
-    <h1>Alertas de hoy</h1>
-    <p class="view-sub">Lo que habría que mirar ahora mismo, no una tabla más de números.</p>
+    <h1>¿Dónde deberías poner tu atención hoy?</h1>
+    <p class="view-sub">Oportunidades para recomendar, destinos a vigilar y la actualidad antes de hablar con un cliente.</p>
     <div class="alert-grid" id="portada-alertas"></div>
 
-    <div class="ccaa-carrusel" style="margin-top:2rem">
+    <div class="accesos-rapidos" id="accesos-rapidos">
+      <button type="button" class="acceso-rapido" data-ir="recomendador">🔎 Recomendar destino</button>
+      <button type="button" class="acceso-rapido" data-ir="oportunidad">📈 Ver oportunidades</button>
+      <button type="button" class="acceso-rapido" data-ir="diagnostico">⚠️ Problemas a tener en cuenta</button>
+      <button type="button" class="acceso-rapido" data-ir="ranking">⚖️ Comparar destinos</button>
+      <button type="button" class="acceso-rapido" data-ir="ficha">📍 Ficha de un destino</button>
+    </div>
+
+    <h2 class="contexto-seccion-titulo" style="margin-top:1.6rem">Comunidad a comunidad</h2>
+    <div class="ccaa-carrusel">
       <button type="button" id="carrusel-prev" class="carrusel-flecha" aria-label="Comunidad anterior">‹</button>
       <div class="ccaa-pista-viewport" id="ccaa-pista-viewport">
         <div class="ccaa-pista-continua" id="ccaa-pista-continua"></div>
@@ -67,6 +77,7 @@
       <h2 id="ccaa-tarjeta-nombre"></h2>
       <div class="ccaa-tarjeta-stats" id="ccaa-tarjeta-stats"></div>
       <button type="button" id="btn-ver-todos-ccaa" class="link-btn">Ver todos los indicadores →</button>
+      <button type="button" id="btn-ver-ficha-ccaa" class="link-btn">Ver ficha completa de este destino →</button>
     </div>
     <div class="carrusel-puntos" id="carrusel-puntos"></div>
     <p class="muted carrusel-aviso-manual" id="carrusel-aviso-manual" hidden>
@@ -75,8 +86,8 @@
   </section>
 
   <section id="sec-oportunidad" class="view">
-    <h1>Mapa de oportunidad</h1>
-    <p class="view-sub">Dónde cruzan mala fama y mucha presión turística, y dónde pasa justo lo contrario.</p>
+    <h1>Oportunidades</h1>
+    <p class="view-sub">Qué destinos merece la pena explorar o recomendar ahora, y por qué.</p>
 
     <div id="oportunidad-resumen"></div>
 
@@ -105,7 +116,8 @@
   </section>
 
   <section id="sec-diagnostico" class="view">
-    <h1>Fortalezas y debilidades</h1>
+    <h1>Problemas a tener en cuenta</h1>
+    <p class="view-sub">Qué deberías saber antes de recomendar cada destino: sus mejores y peores aspectos, según las reseñas reales.</p>
 
     <div class="panel">
       <div class="panel-titulo-info">
@@ -129,8 +141,8 @@
   </section>
 
   <section id="sec-ranking" class="view">
-    <h1>Ranking territorial</h1>
-    <p class="view-sub">Compara la satisfacción turística entre comunidades y decide dónde priorizar.</p>
+    <h1>Comparar destinos</h1>
+    <p class="view-sub">Compara la satisfacción entre comunidades para decidir qué destino recomendar primero.</p>
     <label class="filtro-ccaa">Ver ranking por
       <select id="ranking-metrica"></select>
     </label>
@@ -139,9 +151,18 @@
     </div>
   </section>
 
+  <section id="sec-ficha" class="view">
+    <h1>Ficha de destino</h1>
+    <p class="view-sub">Todo lo que sabemos de una comunidad, reunido en un solo sitio: para tenerlo listo antes de recomendarla.</p>
+    <label class="filtro-ccaa">Elige un destino
+      <select id="ficha-ccaa"></select>
+    </label>
+    <div id="ficha-contenido"></div>
+  </section>
+
   <section id="sec-recomendador" class="view">
-    <h1>Recomendador</h1>
-    <p class="view-sub">Encuentra el alojamiento o restaurante que mejor encaja con lo que buscas, dando prioridad a los destinos menos saturados si así lo decides.</p>
+    <h1>Recomendar destino</h1>
+    <p class="view-sub">Cuéntame qué busca tu cliente: filtra por lo que más le importa y encuentra los alojamientos o restaurantes que mejor encajan.</p>
     <div class="recomendador-layout">
       <form id="form-recomendador" class="panel form-recomendador">
         <div class="field-row">
@@ -222,8 +243,8 @@
   </section>
 
   <section id="sec-tendencia" class="view">
-    <h1>Tendencia</h1>
-    <p class="view-sub">Detectarlo aquí, mes a mes, permite actuar antes de que se convierta en una crisis de reputación pública.</p>
+    <h1>Actualidad</h1>
+    <p class="view-sub">Qué está cambiando ahora mismo en cada destino: detectarlo a tiempo evita recomendar algo que ha empezado a ir a peor.</p>
 
     <div class="panel" id="tendencia-alertas">
       <div class="cargando-spinner"><span class="spinner" aria-hidden="true"></span> Buscando qué está empeorando ahora mismo en toda España…</div>

@@ -346,6 +346,17 @@ export async function render() {
   el("btn-reanudar-carrete").addEventListener("click", reanudarCarrete);
   window.addEventListener("resize", centrarPista);
 
+  // Accesos rápidos: llevan a la tarea siguiente sin tener que buscarla en el menú.
+  el("accesos-rapidos").addEventListener("click", (ev) => {
+    const boton = ev.target.closest(".acceso-rapido");
+    if (boton) location.hash = boton.dataset.ir;
+  });
+  // "Ver ficha completa": pasa la CCAA que se está viendo ahora mismo en el carrusel.
+  el("btn-ver-ficha-ccaa").addEventListener("click", () => {
+    sessionStorage.setItem("ficha_ccaa", listaCcaa[indice].ccaa);
+    location.hash = "ficha";
+  });
+
   await mostrarIndice(0);
   centrarPista(); // la primera CCAA también tiene que arrancar centrada, no a la izquierda del todo
 

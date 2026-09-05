@@ -306,6 +306,15 @@ html, body { height: 100%; }
 .alert-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; }
 @media (max-width: 900px) { .alert-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 500px) { .alert-grid { grid-template-columns: 1fr; } }
+
+/* Accesos rápidos de Inicio: llevan directo a la tarea, no a "una pestaña más". */
+.accesos-rapidos { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.2rem; }
+.acceso-rapido {
+  background: var(--blanco); border: 1px solid var(--borde); border-radius: 999px;
+  padding: .55rem 1.1rem; font-size: .85rem; font-weight: 600; color: var(--tinta);
+  cursor: pointer; box-shadow: var(--sombra); transition: border-color .15s ease, color .15s ease;
+}
+.acceso-rapido:hover { border-color: var(--rojo-primario); color: var(--rojo-primario); }
 .alert-card {
   border-radius: var(--radio); padding: .8rem .9rem; box-shadow: var(--sombra);
   border-left: 4px solid var(--rojo-primario); background: var(--blanco);
@@ -528,3 +537,17 @@ input[type="range"]::-moz-range-progress { background: var(--rojo-primario); bor
 .modal-close { position: absolute; top: .6rem; right: .8rem; border: none; background: none; font-size: 1.4rem; cursor: pointer; color: var(--texto-secundario); }
 
 .leaflet-container { font-family: var(--fuente-texto); }
+
+/* --- Ficha de destino: reune varios paneles reales en una sola pantalla --------------- */
+.ficha-titulo-destino { margin: 1.2rem 0 1rem; }
+.ficha-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem; }
+@media (max-width: 860px) { .ficha-grid { grid-template-columns: 1fr; } }
+.ficha-bloque h3 { margin-top: 0; }
+.ficha-subtitulo { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin: 0 0 .4rem; }
+.ficha-oportunidad-cabecera { display: flex; align-items: center; gap: .8rem; }
+.ficha-oportunidad-puntuacion { font-family: var(--fuente-titulares); font-weight: 800; font-size: 1.8rem; }
+.ficha-dos-columnas { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.ficha-dos-columnas ul { margin: 0; padding-left: 1.1rem; font-size: .88rem; }
+.ficha-lugar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .8rem; }
+.ficha-lugar { border: 1px solid var(--borde); border-radius: 8px; padding: .7rem .9rem; }
+.ficha-acciones { display: flex; gap: .6rem; margin-top: 1rem; flex-wrap: wrap; }

@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from .. import config, data_loader
 from .contexto import INDICADORES_DEFECTO
-from .recomendador import clasificar_tipo_experiencia
+from .recomendador import clasificar_tipo_experiencia, _con_nombre_real
 
 router = APIRouter()
 
@@ -33,6 +33,7 @@ def _mejor_de_tipo(perfil: pd.DataFrame, tipo: str) -> dict | None:
     positivo): un "mejor valorado" con 1 reseña al 100% no significa nada."""
     if "tipo_experiencia" not in perfil.columns:
         perfil = perfil.assign(tipo_experiencia=perfil["property_type"].apply(clasificar_tipo_experiencia))
+    perfil = _con_nombre_real(perfil)  # nombre real cuando no es Airbnb; ya aplica ese filtro por dentro
     candidatos = perfil[
         (perfil["tipo_experiencia"] == tipo)
         & (perfil["n_resenas"] >= config.MIN_RESENAS_RECOMENDADOR)
@@ -46,6 +47,7 @@ def _mejor_de_tipo(perfil: pd.DataFrame, tipo: str) -> dict | None:
 
     return {
         "entity_id": mejor["entity_id"],
+        "nombre": mejor["nombre"] if pd.notna(mejor["nombre"]) else None,
         "ciudad": ciudad,
         "ciudad_es_aproximada": nivel is not None and nivel != "ciudad",
         "tipo_alojamiento": config.traducir_tipo_alojamiento(mejor["property_type"]),
