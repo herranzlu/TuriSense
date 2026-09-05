@@ -146,12 +146,17 @@ async function cargarFicha(ccaa) {
     ${bloqueEstablecimientos(resumen, recomendados)}
     <div class="ficha-acciones">
       <button type="button" class="btn-secundario" data-ir="recomendador">🔎 Usar en el recomendador</button>
-      <button type="button" class="btn-secundario" data-ir="ranking">⚖️ Comparar con otros destinos</button>
+      <button type="button" class="btn-secundario" data-ir="diagnostico" data-vista="comparar">⚖️ Comparar con otros destinos</button>
     </div>`;
 
   el("ficha-contenido")
     .querySelectorAll("[data-ir]")
-    .forEach((boton) => boton.addEventListener("click", () => (location.hash = boton.dataset.ir)));
+    .forEach((boton) =>
+      boton.addEventListener("click", () => {
+        if (boton.dataset.vista) sessionStorage.setItem("diag_vista", boton.dataset.vista);
+        location.hash = boton.dataset.ir;
+      }),
+    );
 }
 
 export async function render() {

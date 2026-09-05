@@ -349,7 +349,9 @@ export async function render() {
   // Menú de acciones: la primera pantalla de trabajo, no una lista de accesos discretos.
   el("menu-acciones").addEventListener("click", (ev) => {
     const boton = ev.target.closest(".accion-card");
-    if (boton) location.hash = boton.dataset.ir;
+    if (!boton) return;
+    if (boton.dataset.vista) sessionStorage.setItem("diag_vista", boton.dataset.vista);
+    location.hash = boton.dataset.ir;
   });
   // "Ver ficha completa": pasa la CCAA que se está viendo ahora mismo en el carrusel.
   el("btn-ver-ficha-ccaa").addEventListener("click", () => {

@@ -46,6 +46,7 @@ h1 { font-size: 1.4rem; }
 code { background: #EFE9E2; padding: .1em .35em; border-radius: 4px; font-size: .85em; }
 .muted { color: var(--texto-secundario); }
 .view-sub { color: var(--texto-secundario); margin: 0 0 1rem; max-width: 62ch; }
+.view-sub .btn-info, .muted .btn-info { margin-left: .4rem; vertical-align: middle; }
 .resumen-ejecutivo { font-family: var(--fuente-titulares); font-size: 1.15rem; font-weight: 600; max-width: 70ch; margin: 0 0 1.2rem; }
 
 /* Divide una pestaña larga en bloques con nombre propio, para que se lea como una
@@ -184,6 +185,17 @@ html, body { height: 100%; }
 .btn-info:hover { border-color: var(--rojo-primario); color: var(--rojo-primario); }
 
 .panel-titulo-grande { margin: 0 0 .8rem; font-size: 1.15rem; }
+
+/* Selector de vista (p.ej. Visión general / Comparar destinos, dentro de Experiencia
+   del viajero): mismo lenguaje visual que .nav-btn.is-active, en formato píldora. */
+.vista-tabs { display: flex; gap: .5rem; margin: 1rem 0 1.4rem; flex-wrap: wrap; }
+.vista-tab {
+  background: var(--blanco); color: var(--texto-secundario); border: 1px solid var(--borde);
+  border-radius: 999px; padding: .5rem 1.1rem; font-weight: 600; font-size: .88rem;
+  cursor: pointer; font-family: var(--fuente-texto);
+}
+.vista-tab:hover { border-color: var(--rojo-primario); color: var(--rojo-primario); }
+.vista-tab.is-active { background: var(--rojo-primario); color: var(--blanco); border-color: var(--rojo-primario); }
 
 /* --- KPIs / tarjetas de portada y contexto --- */
 .kpi-row { display: flex; flex-wrap: wrap; gap: .9rem; margin-bottom: 1.2rem; }
@@ -389,6 +401,8 @@ select, input[type="text"] {
 .aspecto-slider { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .5rem; font-size: .85rem; }
 .aspecto-slider input[type="range"] { grid-column: 1 / -1; }
 .anti-masif { margin-bottom: 1rem; }
+.anti-masif-texto { display: flex; align-items: center; gap: .4rem; }
+.anti-masif-texto .btn-info { width: 1.15rem; height: 1.15rem; font-size: .7rem; }
 
 /* Sliders en rojo TUI, en vez del azul/gris por defecto del navegador */
 input[type="range"] {

@@ -104,6 +104,12 @@ def contexto(
     # en el orden narrativo de INDICADORES_DEFECTO, no el alfabético que da groupby
     indicadores = [indicadores_por_id[i] for i in INDICADORES_DEFECTO if i in indicadores_por_id]
 
+    # Fuentes institucionales reales de ESTA sección: se derivan de source_organization
+    # de los propios indicadores mostrados (algunos vienen combinados, p.ej. "INE / EGATUR
+    # / FRONTUR / Dataestur"), nunca de una lista escrita a mano que pueda quedarse
+    # desactualizada si cambia el indicador por defecto.
+    fuentes = sorted({tok.strip() for ind in indicadores for tok in ind["fuente"].split("/") if tok.strip()})
+
     resumen = None
     turistas = indicadores_por_id.get("frontur_tourists_per_1000_residents")
     if turistas and turistas["valor_absoluto_nacional"] is not None:
@@ -113,7 +119,7 @@ def contexto(
         if turistas["variacion_interanual_pct"] is not None:
             v = turistas["variacion_interanual_pct"]
             variacion_txt = f", un {abs(v):.1f}% {'más' if v >= 0 else 'menos'} que en {mes_nombre} del año anterior"
-        resumen = f"España recibió alrededor de {numero_es} turistas internacionales en {mes_nombre} de {periodo_usado[:4]}{variacion_txt}."
+        resumen = f"España recibió {numero_es} turistas internacionales en {mes_nombre} de {periodo_usado[:4]}{variacion_txt}."
 
     anio = int(periodo_usado[:4])
     anio_anterior = anio - 1
@@ -127,6 +133,7 @@ def contexto(
     return {
         "periodo": periodo_usado,
         "resumen": resumen,
+        "fuentes": fuentes,
         "indicadores_mensuales": indicadores,
         "contexto_estructural_anual": {
             "anio": anio_estructural_usado,

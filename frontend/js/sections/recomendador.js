@@ -17,6 +17,14 @@ const ACLARACION_ASPECTO = {
   precio: "valoración de la relación calidad-precio, no un importe en euros",
 };
 
+// "Masificación" ya tiene su propio control, específico y con semántica clara
+// ("Evitar masificaciones", más abajo): mantenerla también aquí como un aspecto
+// genérico más era redundante y, además, confuso (esta columna mide sentimiento
+// positivo sobre las pocas reseñas que mencionan masificación explícitamente, no
+// "cuánto evitar" el destino). No se toca /api/aspectos ni config.ASPECTOS: esa
+// lista la siguen usando tal cual el mapa de calor, el ranking y la ficha de destino.
+const ASPECTO_OCULTO_EN_RECOMENDADOR = "masificacion";
+
 async function poblarFiltros() {
   const [filtros, aspectos] = await Promise.all([api.get("/recomendar/filtros"), api.get("/aspectos")]);
 
@@ -48,6 +56,7 @@ async function poblarFiltros() {
   // motor real cuando no recibe ninguna preferencia de aspecto).
   const contenedor = el("rec-aspectos");
   contenedor.innerHTML = aspectos.aspectos
+    .filter((a) => a.key !== ASPECTO_OCULTO_EN_RECOMENDADOR)
     .map((a) => {
       const aclaracion = ACLARACION_ASPECTO[a.key] ? `<span class="muted" style="display:block;font-size:.7rem">${ACLARACION_ASPECTO[a.key]}</span>` : "";
       return `
@@ -200,7 +209,18 @@ export async function render() {
   });
 
   el("rec-antimasif").addEventListener("input", (ev) => {
-    el("rec-antimasif-val").textContent = Number(ev.target.value).toFixed(2);
+    el("rec-antimasif-val").textContent = `${Math.round(Number(ev.target.value) * 100)}%`;
+  });
+  el("btn-info-antimasif").addEventListener("click", () => {
+    el("modal-detalle-contenido").innerHTML = `
+      <h2>Evitar masificaciones</h2>
+      <p>Cuanto más alto pongas este porcentaje, más penalizamos en los resultados los
+      lugares con más reseñas relativas a otros parecidos (nuestra mejor aproximación,
+      con los datos disponibles, a mayor afluencia): al 0% no influye en el orden; al
+      100%, se prioriza con fuerza a los que reciben menos reseñas en proporción.</p>
+      <p class="muted">Un 90% en este control significa que estás pidiendo, con mucha
+      fuerza, destinos poco masificados; no es una puntuación del propio lugar.</p>`;
+    el("modal-detalle").hidden = false;
   });
   el("form-recomendador").addEventListener("submit", buscar);
   el("rec-ver-mas").addEventListener("click", verMas);

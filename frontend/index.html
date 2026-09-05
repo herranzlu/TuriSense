@@ -40,9 +40,8 @@
     <button data-section="ficha" class="nav-btn">3 · Ficha de destino</button>
     <button data-section="oportunidad" class="nav-btn">4 · Oportunidades</button>
     <button data-section="diagnostico" class="nav-btn">5 · Experiencia del viajero</button>
-    <button data-section="ranking" class="nav-btn">6 · Comparar destinos</button>
-    <button data-section="tendencia" class="nav-btn">7 · Actualidad</button>
-    <button data-section="contexto" class="nav-btn">8 · Mercado turístico</button>
+    <button data-section="tendencia" class="nav-btn">6 · Actualidad</button>
+    <button data-section="contexto" class="nav-btn">7 · Mercado turístico</button>
   </nav>
   <div class="sidebar-footer">
     <button id="btn-metodologia" class="link-btn">ℹ️ Nota metodológica</button>
@@ -69,7 +68,7 @@
         <span class="accion-card-desc">Oportunidad, experiencia del viajero, actualidad y establecimientos reales de una comunidad, todo junto.</span>
         <span class="accion-card-cta">Ver ficha →</span>
       </button>
-      <button type="button" class="accion-card" data-ir="ranking">
+      <button type="button" class="accion-card" data-ir="diagnostico" data-vista="comparar">
         <span class="accion-card-icono">⚖️</span>
         <span class="accion-card-titulo">Comparar destinos</span>
         <span class="accion-card-desc">Ordena las 19 comunidades por satisfacción general o por el aspecto que más le importe a tu cliente.</span>
@@ -151,42 +150,50 @@
 
   <section id="sec-diagnostico" class="view">
     <h1>Experiencia del viajero</h1>
-    <p class="view-sub">¿Qué valoran mejor y peor los viajeros en cada destino? La voz de los propios viajeros, aspecto a aspecto y comunidad a comunidad.</p>
-    <p class="muted" style="margin:-.6rem 0 1.4rem">Todo lo de esta página mide satisfacción y percepción según las reseñas reales: no son incidencias objetivas del destino, son valoraciones de quien lo ha visitado.</p>
+    <p class="view-sub">Las opiniones de los turistas, sintetizadas en gráficos para facilitar la toma de decisiones.
+      <button type="button" id="btn-info-experiencia" class="btn-info" aria-label="De dónde salen estos datos">i</button>
+    </p>
 
-    <h2 class="contexto-seccion-titulo">Visión general: comparativa entre comunidades</h2>
-    <div class="panel">
-      <div class="panel-titulo-info">
-        <h3>Satisfacción de los viajeros por aspecto</h3>
-        <button type="button" id="btn-info-heatmap" class="btn-info" aria-label="Cómo leer este mapa de calor">i</button>
+    <div class="vista-tabs" id="diag-vista-tabs">
+      <button type="button" class="vista-tab is-active" data-vista="general">Visión general</button>
+      <button type="button" class="vista-tab" data-vista="comparar">Comparar destinos</button>
+    </div>
+
+    <div id="diag-vista-general">
+      <h2 class="contexto-seccion-titulo">Visión general: comparativa entre comunidades</h2>
+      <div class="panel">
+        <div class="panel-titulo-info">
+          <h3>Satisfacción de los viajeros por aspecto</h3>
+          <button type="button" id="btn-info-heatmap" class="btn-info" aria-label="Cómo leer este mapa de calor">i</button>
+        </div>
+        <div class="tabla-scroll">
+          <table class="heatmap" id="tabla-heatmap"></table>
+        </div>
       </div>
-      <div class="tabla-scroll">
-        <table class="heatmap" id="tabla-heatmap"></table>
+
+      <h2 class="contexto-seccion-titulo" style="margin-top:2rem">Análisis por destino</h2>
+      <div class="panel">
+        <div class="field-row" style="margin-bottom:0">
+          <label class="filtro-ccaa">Elige un destino
+            <select id="diag-ccaa"><option value="">España (todas las CCAA)</option></select>
+          </label>
+        </div>
+        <p class="muted" id="diag-nota-comparacion" style="margin-top:.2rem"></p>
+        <div class="chart-box chart-box-ancho"><canvas id="chart-aspectos"></canvas></div>
+        <div class="leyenda" id="diag-leyenda-aspectos"></div>
+        <div id="diag-aspectos-advertir"></div>
       </div>
     </div>
 
-    <h2 class="contexto-seccion-titulo" style="margin-top:2rem">Análisis por destino</h2>
-    <div class="panel">
-      <div class="field-row" style="margin-bottom:0">
-        <label class="filtro-ccaa">Elige un destino
-          <select id="diag-ccaa"><option value="">España (todas las CCAA)</option></select>
-        </label>
+    <div id="diag-vista-comparar" hidden>
+      <h2 class="contexto-seccion-titulo">Comparar destinos</h2>
+      <p class="muted" style="margin-top:-.6rem">Compara la satisfacción entre comunidades para decidir qué destino recomendar primero.</p>
+      <label class="filtro-ccaa">Ver ranking por
+        <select id="ranking-metrica"></select>
+      </label>
+      <div class="panel">
+        <div class="chart-box chart-box-ranking"><canvas id="chart-ranking"></canvas></div>
       </div>
-      <p class="muted" id="diag-nota-comparacion" style="margin-top:.2rem"></p>
-      <div class="chart-box chart-box-ancho"><canvas id="chart-aspectos"></canvas></div>
-      <div class="leyenda" id="diag-leyenda-aspectos"></div>
-      <div id="diag-aspectos-advertir"></div>
-    </div>
-  </section>
-
-  <section id="sec-ranking" class="view">
-    <h1>Comparar destinos</h1>
-    <p class="view-sub">Compara la satisfacción entre comunidades para decidir qué destino recomendar primero.</p>
-    <label class="filtro-ccaa">Ver ranking por
-      <select id="ranking-metrica"></select>
-    </label>
-    <div class="panel">
-      <div class="chart-box chart-box-ranking"><canvas id="chart-ranking"></canvas></div>
     </div>
   </section>
 
@@ -201,7 +208,7 @@
 
   <section id="sec-recomendador" class="view">
     <h1>Recomendar destino</h1>
-    <p class="view-sub">Cuéntame qué busca tu cliente: filtra por lo que más le importa y encuentra los alojamientos o restaurantes que mejor encajan.</p>
+    <p class="view-sub">Busca el destino que mejor se ajuste a tu cliente, según sus preferencias</p>
     <div class="recomendador-layout">
       <form id="form-recomendador" class="panel form-recomendador">
         <div class="field-row">
@@ -215,11 +222,10 @@
             <select id="rec-tipo"><option value="todas">Cualquiera</option></select>
           </label>
         </div>
-        <p class="muted" style="margin:-.4rem 0 .6rem">No hay coordenadas exactas en los datos: filtrar por ciudad es lo más parecido a "cerca de mí" que se puede ofrecer sin inventar un dato que no existe.</p>
-        <p class="muted" style="margin:0 0 .6rem">Marca lo que más te importe: cada deslizador refleja qué tan bien valoran los viajeros ESE aspecto en sus reseñas (no es un filtro exacto de kilómetros o euros). Si no tocas nada, se ordena por valoración general.</p>
+        <p class="muted" style="margin:-.4rem 0 .6rem">Indica qué aspectos son más importantes para tu cliente y ajustaremos las recomendaciones a sus preferencias.</p>
         <div class="aspectos-sliders" id="rec-aspectos"></div>
         <label class="anti-masif">
-          Evitar los destinos más masificados: <span id="rec-antimasif-val">0.0</span>
+          <span class="anti-masif-texto">Evitar masificaciones: <strong id="rec-antimasif-val">0%</strong><button type="button" id="btn-info-antimasif" class="btn-info" aria-label="Cómo funciona este control">i</button></span>
           <input type="range" id="rec-antimasif" min="0" max="1" step="0.05" value="0" />
         </label>
         <button type="submit" class="btn-primary">Buscar lugares</button>
@@ -234,7 +240,11 @@
 
   <section id="sec-contexto" class="view">
     <h1>Mercado turístico</h1>
-    <p class="view-sub">¿Cómo se está comportando el turismo? El dato oficial, según fuentes institucionales (AENA, INE, EGATUR, FRONTUR).</p>
+    <p class="view-sub">¿Cómo se está comportando el turismo?</p>
+    <p class="muted" style="margin-top:-.6rem">
+      Datos según fuentes institucionales
+      <button type="button" id="btn-info-fuentes" class="btn-info" aria-label="Ver fuentes institucionales">i</button>
+    </p>
 
     <div class="contexto-seccion">
       <h2 class="contexto-seccion-titulo">1 · Situación actual</h2>

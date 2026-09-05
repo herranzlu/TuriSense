@@ -20,6 +20,28 @@ const ETIQUETA_CUADRANTE = {
   escala_moderada__intensidad_moderada: "En desarrollo",
 };
 
+const MESES_ABR = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+// "Interanual" a secas obligaba a adivinar qué se compara con qué; con el periodo real
+// (AAAA-MM que ya devuelve /contexto) se puede decir "dic 2025 vs dic 2024" sin inventar
+// nada: es el mismo mes que usa el propio backend para calcular yoy_change.
+function etiquetaInteranual(periodo) {
+  if (!periodo) return "interanual";
+  const [anio, mes] = periodo.split("-").map(Number);
+  if (!anio || !mes) return "interanual";
+  return `${MESES_ABR[mes - 1]} ${anio} vs ${MESES_ABR[mes - 1]} ${anio - 1}`;
+}
+
+// Varias métricas de esta página son directamente un porcentaje (p.ej. ocupación
+// hotelera); sin el símbolo "%" pegado a la cifra grande, un "44,82" a secas no dice
+// si es una tasa por 1.000 residentes, un importe o un porcentaje.
+function esPorcentaje(unidad) {
+  return typeof unidad === "string" && unidad.trim().startsWith("%");
+}
+function cifraConUnidad(valor, unidad) {
+  return esPorcentaje(unidad) ? `${fmtNum(valor)}%` : fmtNum(valor);
+}
+
 function renderKpis(data) {
   if (data.resumen) {
     el("contexto-resumen").hidden = false;
@@ -31,23 +53,35 @@ function renderKpis(data) {
   el("contexto-kpis").innerHTML = data.indicadores_mensuales
     .map((i) => {
       const yoy = i.variacion_interanual_pct;
+      // El badge junto a la cifra grande se queda corto (cabe en el ancho de la tarjeta);
+      // a qué periodo se refiere exactamente se explica debajo, con más espacio, no
+      // apretado en la misma línea que la propia cifra.
       const yoyHtml =
-        yoy === null || yoy === undefined
-          ? ""
-          : `<span class="kpi-yoy ${yoy >= 0 ? "sube" : "baja"}">${yoy >= 0 ? "▲" : "▼"} ${Math.abs(yoy).toFixed(1)}% interanual</span>`;
+        yoy === null || yoy === undefined ? "" : `<span class="kpi-yoy ${yoy >= 0 ? "sube" : "baja"}">${yoy >= 0 ? "▲" : "▼"} ${Math.abs(yoy).toFixed(1)}%</span>`;
+      const periodoHtml = yoy === null || yoy === undefined ? "" : `<span class="muted">${etiquetaInteranual(data.periodo)}</span><br>`;
 
       // Con cifra absoluta reconstruida (turistas, pasajeros...): esa es la protagonista,
       // grande y fácil de leer; la tasa por 1.000 residentes queda como dato secundario
-      // para quien quiera comparar territorios. Sin ella, la tasa/% sigue siendo la única.
+      // para quien quiera comparar territorios. Sin ella, la tasa/% sigue siendo la única,
+      // y si esa tasa es en realidad un porcentaje (ocupación hotelera), se marca como tal.
       const tieneAbsoluta = i.valor_absoluto_nacional !== null && i.valor_absoluto_nacional !== undefined;
-      const cifraGrande = tieneAbsoluta ? fmtNum(i.valor_absoluto_nacional) : fmtNum(i.valor_nacional);
+      const cifraGrande = tieneAbsoluta ? fmtNum(i.valor_absoluto_nacional) : cifraConUnidad(i.valor_nacional, i.unidad);
       const subEtiqueta = tieneAbsoluta ? i.unidad_absoluta : i.etiqueta;
-      const detalleTasa = tieneAbsoluta ? `<br>${fmtNum(i.valor_nacional)} ${i.unidad}` : "";
+      // Con absoluta, la tasa de origen se muestra como detalle; sin ella, solo hace
+      // falta repetir la unidad si no es ya un "%" (ese ya va pegado a la cifra grande).
+      const detalleTasa = tieneAbsoluta
+        ? `<br>${fmtNum(i.valor_nacional)} ${i.unidad}`
+        : esPorcentaje(i.unidad)
+          ? ""
+          : `<br>${i.unidad}`;
+      // Las fuentes ya no se repiten aquí: se listan una sola vez en la cabecera de la
+      // página (icono "i" junto a "Datos según fuentes institucionales").
+      const provisionalHtml = i.provisional ? `<br><span class="muted">Dato provisional</span>` : "";
 
       return `
       <div class="kpi-card">
         <div class="kpi-valor">${cifraGrande}${yoyHtml}</div>
-        <div class="kpi-label">${subEtiqueta}${detalleTasa}<br><span class="muted">${i.fuente}${i.provisional ? " · provisional" : ""}</span></div>
+        <div class="kpi-label">${periodoHtml}${subEtiqueta}${detalleTasa}${provisionalHtml}</div>
       </div>`;
     })
     .join("");
@@ -158,15 +192,14 @@ function renderTerritorial(ccaa, data) {
     .map((i) => {
       const yoy = i.variacion_interanual_pct_ccaa;
       const yoyHtml =
-        yoy === null || yoy === undefined
-          ? ""
-          : `<span class="kpi-yoy ${yoy >= 0 ? "sube" : "baja"}">${yoy >= 0 ? "▲" : "▼"} ${Math.abs(yoy).toFixed(1)}% interanual</span>`;
+        yoy === null || yoy === undefined ? "" : `<span class="kpi-yoy ${yoy >= 0 ? "sube" : "baja"}">${yoy >= 0 ? "▲" : "▼"} ${Math.abs(yoy).toFixed(1)}%</span>`;
+      const periodoHtml = yoy === null || yoy === undefined ? "" : `<span class="muted">${etiquetaInteranual(data.periodo)}</span><br>`;
       return `
       <div class="kpi-card">
-        <div class="kpi-valor">${fmtNum(i.valor_ccaa)}${yoyHtml}</div>
+        <div class="kpi-valor">${cifraConUnidad(i.valor_ccaa, i.unidad)}${yoyHtml}</div>
         <div class="kpi-label">
-          ${i.unidad}<br>${i.etiqueta}<br>
-          <span class="muted">puesto ${i.puesto_ccaa} de ${i.total_ccaa_con_dato} · media España: ${fmtNum(i.valor_nacional)}</span>
+          ${periodoHtml}${i.unidad}<br>${i.etiqueta}<br>
+          <span class="muted">puesto ${i.puesto_ccaa} de ${i.total_ccaa_con_dato} · media España: ${cifraConUnidad(i.valor_nacional, i.unidad)}</span>
         </div>
       </div>`;
     })
@@ -285,4 +318,14 @@ export async function render() {
   el("contexto-ccaa").insertAdjacentHTML("afterbegin", `<option value="" selected>España (media nacional)</option>`);
   el("contexto-ccaa").addEventListener("change", (ev) => cargarTerritorial(ev.target.value));
   renderTerritorial(null);
+
+  // Fuentes reales de ESTA sección, calculadas por el backend a partir de los propios
+  // indicadores mostrados (nunca una lista escrita a mano en el frontend).
+  el("btn-info-fuentes").addEventListener("click", () => {
+    const lista = (data.fuentes || []).map((f) => `<li>${f}</li>`).join("");
+    el("modal-detalle-contenido").innerHTML = `
+      <h2>Fuentes institucionales utilizadas en esta página</h2>
+      <ul>${lista || "<li>No se ha podido determinar la fuente.</li>"}</ul>`;
+    el("modal-detalle").hidden = false;
+  });
 }

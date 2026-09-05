@@ -1,5 +1,6 @@
 import { api } from "../api.js";
 import { el, llenarSelect, fmtPct, interpolarColor, degradadoPositivoPorValor, rangoAjustado, conCarga } from "../utils.js";
+import * as ranking from "./ranking.js";
 
 let chart = null;
 let inicializado = false;
@@ -159,7 +160,7 @@ async function cargarRanking(ccaa) {
         if (!elementos.length) return;
         const aspectoKey = data.aspectos[elementos[0].index].aspecto;
         sessionStorage.setItem("ranking_metrica", aspectoKey);
-        location.hash = "ranking";
+        cambiarVista("comparar");
       },
       plugins: {
         legend: { display: false },
@@ -194,11 +195,32 @@ function abrirExplicacionCelda(celda) {
   el("modal-detalle").hidden = false;
 }
 
+// "Comparar destinos" vive ahora como una segunda vista de esta misma página (antes
+// era una sección aparte del menú principal): conceptualmente es la misma familia de
+// datos (satisfacción, aspectos, fortalezas/debilidades por CCAA), así que agruparlas
+// reduce el menú sin perder ninguna funcionalidad ni dato.
+async function cambiarVista(vista) {
+  document.querySelectorAll("#diag-vista-tabs .vista-tab").forEach((b) => b.classList.toggle("is-active", b.dataset.vista === vista));
+  el("diag-vista-general").hidden = vista !== "general";
+  el("diag-vista-comparar").hidden = vista !== "comparar";
+  if (vista === "comparar") await conCarga(ranking.render());
+}
+
+function abrirInfoExperiencia() {
+  el("modal-detalle-contenido").innerHTML = `
+    <h2>De dónde salen estos datos</h2>
+    <p>Todo lo de esta página mide satisfacción y percepción según reseñas reales de
+    viajeros: no son incidencias objetivas del destino verificadas por un tercero,
+    son valoraciones de quien lo ha visitado.</p>`;
+  el("modal-detalle").hidden = false;
+}
+
 export async function render() {
   if (!inicializado) {
     inicializado = true;
     await cargarHeatmap();
     el("btn-info-heatmap").addEventListener("click", abrirInfoHeatmap);
+    el("btn-info-experiencia").addEventListener("click", abrirInfoExperiencia);
     el("tabla-heatmap").addEventListener("click", (ev) => {
       const celda = ev.target.closest(".heatmap-celda");
       if (celda) abrirExplicacionCelda(celda);
@@ -210,6 +232,18 @@ export async function render() {
     );
     el("diag-ccaa").insertAdjacentHTML("afterbegin", `<option value="" selected>España (todas las CCAA)</option>`);
     el("diag-ccaa").addEventListener("change", (ev) => cargarRanking(ev.target.value));
+    el("diag-vista-tabs").addEventListener("click", (ev) => {
+      const boton = ev.target.closest(".vista-tab");
+      if (boton) cambiarVista(boton.dataset.vista);
+    });
   }
   await cargarRanking(el("diag-ccaa").value);
+
+  // Si se llegó aquí desde "Comparar destinos" del Inicio o de una Ficha de destino,
+  // se abre directamente en esa vista (solo la primera vez: luego manda el clic en las tabs).
+  const vistaPedida = sessionStorage.getItem("diag_vista");
+  if (vistaPedida) {
+    sessionStorage.removeItem("diag_vista");
+    await cambiarVista(vistaPedida);
+  }
 }

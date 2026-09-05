@@ -2,13 +2,16 @@ import { el, conCarga } from "./utils.js";
 import * as portada from "./sections/portada.js";
 import * as ficha from "./sections/ficha.js";
 import * as recomendador from "./sections/recomendador.js";
-import * as ranking from "./sections/ranking.js";
 import * as oportunidad from "./sections/oportunidad.js";
 import * as diagnostico from "./sections/diagnostico.js";
 import * as contexto from "./sections/contexto.js";
 import * as tendencia from "./sections/tendencia.js";
 
-const SECCIONES = { portada, ficha, recomendador, ranking, oportunidad, diagnostico, contexto, tendencia };
+// "Comparar destinos" (antes sección propia, hash #ranking) vive ahora como una
+// segunda vista dentro de "Experiencia del viajero" (ver sections/diagnostico.js);
+// sections/ranking.js sigue existiendo tal cual, pero diagnostico.js la usa
+// directamente en vez de que esta tabla la enrute como sección independiente.
+const SECCIONES = { portada, ficha, recomendador, oportunidad, diagnostico, contexto, tendencia };
 
 async function activar(nombre) {
   document.querySelectorAll(".nav-btn").forEach((b) => b.classList.toggle("is-active", b.dataset.section === nombre));
