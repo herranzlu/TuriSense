@@ -43,7 +43,7 @@ const CASOS = [
 
 // Qué podría hacer un Product Manager: una elaboración razonada de la
 // acción_sugerida real (nunca una acción distinta a la que ya calcula
-// /api/oportunidad/mapa) — pero "vigilar" no puede quedarse en "esperar y ver":
+// /api/oportunidad/mapa), pero "vigilar" no puede quedarse en "esperar y ver":
 // se apoya en el resto de datos ya mostrados (posición en el aspecto, dato
 // oficial) para proponer algo concreto y realista, no un placeholder vacío.
 function decisionTexto(caso, oportunidad, posicion, indicador) {
@@ -59,7 +59,7 @@ function decisionTexto(caso, oportunidad, posicion, indicador) {
 
   if (accion === "vigilar" && malPosicionado) {
     // Caso Baleares: el sistema todavía no lo marca como "renegociar", pero ya
-    // es de las peor valoradas del país en este aspecto — vale la pena adelantarse.
+    // es de las peor valoradas del país en este aspecto: vale la pena adelantarse.
     return `El sistema todavía lo marca como "vigilar", no como una renegociación directa, pero ${caso.ccaa} ya es de las comunidades peor valoradas de España en ${aspectoLabel} (puesto ${posicion.puesto} de ${posicion.total})${indicador ? `, con ${indicador.etiqueta.toLowerCase()} moviéndose${yoyTxt}` : ""}. Una línea de actuación realista, sin esperar a que se convierta en el motor dominante: revisar con los partners de alojamiento si hay margen para ajustar precio o crear paquetes específicos en temporada baja, antes de fijar las tarifas de la próxima campaña sobre estos mismos números.`;
   }
 
@@ -87,7 +87,7 @@ function panelVacio(mensaje) {
 function bloqueSenal(caso, alerta) {
   if (!alerta) {
     return panelVacio(
-      `Ahora mismo no hay ninguna racha activa de empeoramiento en ${etiquetaAspecto[caso.aspecto] ?? caso.aspecto} en ${caso.ccaa}: la señal que motivó este caso ya no está vigente con los datos más recientes (esto es justo lo que se espera de un radar en vivo — no siempre hay una racha activa).`,
+      `Ahora mismo no hay ninguna racha activa de empeoramiento en ${etiquetaAspecto[caso.aspecto] ?? caso.aspecto} en ${caso.ccaa}: la señal que motivó este caso ya no está vigente con los datos más recientes (esto es justo lo que se espera de un radar en vivo: no siempre hay una racha activa).`,
     );
   }
   return `
@@ -107,8 +107,8 @@ function bloqueAspecto(caso, posicion) {
   // general todavía no lo refleja (justo lo que un radar en vivo tiene que anunciar).
   const malPosicionada = posicion.puesto > posicion.total / 2;
   const lectura = malPosicionada
-    ? `en el conjunto de reseñas de alojamientos y restauración de ${caso.ccaa}, es de los peor valorados del país en este aspecto concreto — no es una queja aislada, es una posición estructuralmente baja que la racha reciente empeora todavía más.`
-    : `en el conjunto de reseñas de alojamientos y restauración de ${caso.ccaa}, sigue siendo de los mejor valorados del país en este aspecto — la racha reciente es, precisamente por eso, la señal más interesante de las dos: algo está cambiando que el ranking general todavía no refleja.`;
+    ? `en el conjunto de reseñas de alojamientos y restauración de ${caso.ccaa}, es de los peor valorados del país en este aspecto concreto: no es una queja aislada, es una posición estructuralmente baja que la racha reciente empeora todavía más.`
+    : `en el conjunto de reseñas de alojamientos y restauración de ${caso.ccaa}, sigue siendo de los mejor valorados del país en este aspecto. La racha reciente es, precisamente por eso, la señal más interesante de las dos: algo está cambiando que el ranking general todavía no refleja.`;
   return `
     <div class="caso-dato-fila">
       <span><b>${fmtPct(posicion.pct)}</b> de valoraciones positivas en general</span>
@@ -130,7 +130,7 @@ function bloqueContexto(indicador) {
       <span><b>${cifraConUnidad(indicador.valor_ccaa, indicador.unidad)}</b>${unidadSecundaria}</span>
       <span>puesto <b>${indicador.puesto_ccaa}</b> de <b>${indicador.total_ccaa_con_dato}</b>${yoyTxt}</span>
     </div>
-    <p>Según datos oficiales (${indicador.fuente}), este es el contexto de <b>${indicador.etiqueta.toLowerCase()}</b> en ${indicador.provisional ? "el último mes disponible (dato provisional)" : "el último mes disponible"}: no es una lectura de reseñas, es una cifra institucional — el dato con el que contrastar si la señal detectada arriba encaja con lo que también dicen las fuentes oficiales.</p>`;
+    <p>Según datos oficiales (${indicador.fuente}), este es el contexto de <b>${indicador.etiqueta.toLowerCase()}</b> en ${indicador.provisional ? "el último mes disponible (dato provisional)" : "el último mes disponible"}: no es una lectura de reseñas, es una cifra institucional, el dato con el que contrastar si la señal detectada arriba encaja con lo que también dicen las fuentes oficiales.</p>`;
 }
 
 function bloqueOportunidad(caso, oportunidad) {
@@ -139,7 +139,7 @@ function bloqueOportunidad(caso, oportunidad) {
   const coincide = oportunidad.aspecto_motor === caso.aspecto;
   const notaCoincidencia = coincide
     ? `El aspecto que más pesa en esta puntuación es, precisamente, <b>${motorLabel.toLowerCase()}</b>: la tendencia reciente confirma, con datos de los últimos meses, lo que el Opportunity Score ya venía señalando.`
-    : `El aspecto que más pesa en esta puntuación hoy es <b>${motorLabel.toLowerCase()}</b>, distinto del que muestra la señal reciente — es justo el tipo de cambio que conviene detectar pronto, antes de que se convierta en el motor dominante de la puntuación.`;
+    : `El aspecto que más pesa en esta puntuación hoy es <b>${motorLabel.toLowerCase()}</b>, distinto del que muestra la señal reciente: es justo el tipo de cambio que conviene detectar pronto, antes de que se convierta en el motor dominante de la puntuación.`;
   return `
     <div class="caso-dato-fila">
       <span>puesto <b>${oportunidad.puesto}</b> de 19 en Opportunity Score</span>
