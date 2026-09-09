@@ -41,19 +41,44 @@ const CASOS = [
   },
 ];
 
-// Qué podría hacer un Product Manager con cada tipo de acción: una elaboración
-// razonada de la acción_sugerida real (nunca una acción distinta a la que ya
-// calcula /api/oportunidad/mapa), no una recomendación nueva inventada aquí.
-const DECISION_POR_ACCION = {
-  renegociar: (ccaa) =>
-    `Abrir una renegociación de condiciones con los alojamientos de ${ccaa} antes de la próxima temporada alta: es el mismo aspecto que ya pesaba más en su Opportunity Score, y la tendencia reciente lo confirma con datos de los últimos meses.`,
-  vigilar: (ccaa) =>
-    `Añadir ${ccaa} a seguimiento activo: no hay, todavía, evidencia suficiente para una acción drástica, pero la combinación de señal reciente y contexto oficial merece revisarse mes a mes antes de la próxima campaña.`,
-  diagnosticar: (ccaa) =>
-    `Abrir un diagnóstico específico antes de decidir nada: la señal es reciente y la evidencia detrás todavía es limitada — hace falta más dato (o más tiempo) para convertirla en una acción concreta.`,
-  promocionar: (ccaa) =>
-    `Aprovechar el buen momento para promocionar ${ccaa}: la tendencia detectada no compromete, por ahora, su posicionamiento general.`,
-};
+// Qué podría hacer un Product Manager: una elaboración razonada de la
+// acción_sugerida real (nunca una acción distinta a la que ya calcula
+// /api/oportunidad/mapa) — pero "vigilar" no puede quedarse en "esperar y ver":
+// se apoya en el resto de datos ya mostrados (posición en el aspecto, dato
+// oficial) para proponer algo concreto y realista, no un placeholder vacío.
+function decisionTexto(caso, oportunidad, posicion, indicador) {
+  const accion = oportunidad.accion_sugerida;
+  const aspectoLabel = (etiquetaAspecto[caso.aspecto] ?? caso.aspecto).toLowerCase();
+  const malPosicionado = posicion && posicion.puesto > posicion.total / 2;
+  const yoy = indicador?.variacion_interanual_pct_ccaa;
+  const yoyTxt = typeof yoy === "number" ? ` (${yoy >= 0 ? "+" : ""}${yoy.toFixed(1)}% interanual)` : "";
+
+  if (accion === "renegociar") {
+    return `Abrir una renegociación de condiciones con los alojamientos de ${caso.ccaa} antes de la próxima temporada alta, centrada en ${aspectoLabel}: es el aspecto que ya pesaba más en su Opportunity Score, y la tendencia reciente lo confirma con datos de los últimos meses.`;
+  }
+
+  if (accion === "vigilar" && malPosicionado) {
+    // Caso Baleares: el sistema todavía no lo marca como "renegociar", pero ya
+    // es de las peor valoradas del país en este aspecto — vale la pena adelantarse.
+    return `El sistema todavía lo marca como "vigilar", no como una renegociación directa, pero ${caso.ccaa} ya es de las comunidades peor valoradas de España en ${aspectoLabel} (puesto ${posicion.puesto} de ${posicion.total})${indicador ? `, con ${indicador.etiqueta.toLowerCase()} moviéndose${yoyTxt}` : ""}. Una línea de actuación realista, sin esperar a que se convierta en el motor dominante: revisar con los partners de alojamiento si hay margen para ajustar precio o crear paquetes específicos en temporada baja, antes de fijar las tarifas de la próxima campaña sobre estos mismos números.`;
+  }
+
+  if (accion === "vigilar" && !malPosicionado) {
+    // Caso Madrid: sigue bien valorado, la racha es la señal nueva que el
+    // Opportunity Score histórico todavía no ha capturado.
+    return `${caso.ccaa} sigue bien valorada en ${aspectoLabel} (puesto ${posicion.puesto} de ${posicion.total}), así que no hace falta una renegociación de precio. Pero con una racha de esta evidencia${indicador ? ` mientras ${indicador.etiqueta.toLowerCase()} se mueve${yoyTxt}` : ""}, una línea de actuación realista es pedir a los alojamientos con más reseñas negativas recientes de ${aspectoLabel} una revisión de mantenimiento concreta (el equipamiento suele desgastarse más rápido cuanta más ocupación hay), antes de que la próxima temporada alta lo empeore todavía más.`;
+  }
+
+  if (accion === "diagnosticar") {
+    return `Abrir un diagnóstico cualitativo antes de decidir nada a nivel de comunidad: revisar a mano una muestra de las reseñas negativas recientes de ${aspectoLabel} en ${caso.ccaa} para ver si el problema se concentra en unos pocos establecimientos o zonas concretas, o si es realmente generalizado.`;
+  }
+
+  if (accion === "promocionar") {
+    return `Aprovechar el buen momento para promocionar ${caso.ccaa}: la tendencia detectada en ${aspectoLabel} no compromete, por ahora, su posicionamiento general.`;
+  }
+
+  return "Sin una acción sugerida reconocida para elaborar una decisión.";
+}
 
 function panelVacio(mensaje) {
   return `<p class="muted">${mensaje}</p>`;
@@ -124,11 +149,9 @@ function bloqueOportunidad(caso, oportunidad) {
     <p>${notaCoincidencia}</p>`;
 }
 
-function bloqueDecision(caso, oportunidad) {
+function bloqueDecision(caso, oportunidad, posicion, indicador) {
   if (!oportunidad) return panelVacio("Sin Opportunity Score calculado para esta comunidad, no hay una acción sugerida que elaborar.");
-  const generador = DECISION_POR_ACCION[oportunidad.accion_sugerida];
-  const texto = generador ? generador(caso.ccaa) : "Sin una acción sugerida reconocida para elaborar una decisión.";
-  return `<div class="caso-decision"><p>${texto}</p></div>`;
+  return `<div class="caso-decision"><p>${decisionTexto(caso, oportunidad, posicion, indicador)}</p></div>`;
 }
 
 async function cargarCaso(caso) {
@@ -182,7 +205,7 @@ async function cargarCaso(caso) {
       </div>
       <div class="caso-etapa">
         <div class="caso-etapa-num">5</div>
-        <div class="caso-etapa-cuerpo"><h4>Decisión de un Product Manager</h4>${bloqueDecision(caso, oportunidad)}</div>
+        <div class="caso-etapa-cuerpo"><h4>Decisión de un Product Manager</h4>${bloqueDecision(caso, oportunidad, posicion, indicador)}</div>
       </div>
     </div>`;
 }
