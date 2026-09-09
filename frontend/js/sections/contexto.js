@@ -35,10 +35,12 @@ function etiquetaInteranual(periodo) {
 // Varias métricas de esta página son directamente un porcentaje (p.ej. ocupación
 // hotelera); sin el símbolo "%" pegado a la cifra grande, un "44,82" a secas no dice
 // si es una tasa por 1.000 residentes, un importe o un porcentaje.
-function esPorcentaje(unidad) {
+// Exportadas: sections/demos.js reutiliza la misma regla para no decidir dos
+// veces (y de forma distinta) qué indicadores llevan el símbolo "%" pegado.
+export function esPorcentaje(unidad) {
   return typeof unidad === "string" && unidad.trim().startsWith("%");
 }
-function cifraConUnidad(valor, unidad) {
+export function cifraConUnidad(valor, unidad) {
   return esPorcentaje(unidad) ? `${fmtNum(valor)}%` : fmtNum(valor);
 }
 

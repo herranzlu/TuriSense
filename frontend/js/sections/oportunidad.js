@@ -8,7 +8,9 @@ let cargado = false;
 let datosActuales = null;
 let seleccionActual = null; // nombre (geojson) de la CCAA elegida en mapa o tabla, o null si no hay ninguna
 
-const ETIQUETA_ACCION = {
+// Exportadas (no solo module-scope): sections/demos.js reutiliza la misma
+// etiqueta y el mismo color de texto para no duplicar ni desviar la copia.
+export const ETIQUETA_ACCION = {
   promocionar: "Promocionar",
   renegociar: "Renegociar",
   vigilar: "Vigilar",
@@ -28,7 +30,7 @@ const COLOR_ACCION = {
 };
 // Mismo tono, oscurecido: para texto sobre un fondo claro (las píldoras del resumen),
 // el tono de relleno de arriba no tiene contraste suficiente.
-const COLOR_ACCION_TEXTO = {
+export const COLOR_ACCION_TEXTO = {
   promocionar: "#5C7400",
   renegociar: "#9A1F22",
   vigilar: "#7A5A00",

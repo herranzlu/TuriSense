@@ -197,6 +197,34 @@ html, body { height: 100%; }
 .vista-tab:hover { border-color: var(--rojo-primario); color: var(--rojo-primario); }
 .vista-tab.is-active { background: var(--rojo-primario); color: var(--blanco); border-color: var(--rojo-primario); }
 
+/* --- Demos: recorrido de 5 etapas por caso, con datos reales pedidos en vivo --- */
+.caso-resumen { margin-bottom: 1.4rem; }
+.caso-resumen h3 { margin: 0 0 .4rem; }
+.caso-timeline { position: relative; }
+.caso-etapa { display: grid; grid-template-columns: 2.6rem 1fr; gap: 1rem; padding-bottom: 1.6rem; position: relative; }
+.caso-etapa:last-child { padding-bottom: 0; }
+.caso-etapa::before {
+  content: ""; position: absolute; left: 1.3rem; top: 2.6rem; bottom: 0; width: 2px; background: var(--borde);
+}
+.caso-etapa:last-child::before { display: none; }
+.caso-etapa-num {
+  width: 2.6rem; height: 2.6rem; border-radius: 50%; background: var(--rojo-primario); color: var(--blanco);
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.05rem;
+  flex: none; z-index: 1;
+}
+.caso-etapa-cuerpo {
+  background: var(--blanco); border: 1px solid var(--borde); border-radius: var(--radio);
+  padding: 1rem 1.25rem; box-shadow: var(--sombra);
+}
+.caso-etapa-cuerpo h4 { margin: 0 0 .5rem; font-size: 1rem; }
+.caso-etapa-cuerpo p { margin: 0 0 .5rem; }
+.caso-etapa-cuerpo p:last-child { margin-bottom: 0; }
+.caso-dato-fila { display: flex; flex-wrap: wrap; gap: .5rem 1.4rem; margin: .3rem 0 .6rem; font-size: .88rem; }
+.caso-dato-fila b { color: var(--tinta); }
+.caso-decision {
+  border-left: 3px solid var(--rojo-primario); padding-left: .9rem; margin-top: .2rem;
+}
+
 /* --- KPIs / tarjetas de portada y contexto --- */
 .kpi-row { display: flex; flex-wrap: wrap; gap: .9rem; margin-bottom: 1.2rem; }
 .kpi-card {
