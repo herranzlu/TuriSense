@@ -162,7 +162,7 @@ function renderScatter(data) {
   // La satisfacción real de las 19 CCAA se mueve siempre en una banda muy estrecha
   // (normalmente 0,85-0,97): con el eje fijo en 0-1, más de la mitad del gráfico
   // quedaba vacío y las diferencias reales entre comunidades apenas se apreciaban.
-  // El eje empieza en 0,5 (fijo) y el máximo se ajusta al dato real de cada carga
+  // El eje empieza en 0,75 (fijo) y el máximo se ajusta al dato real de cada carga
   // (nunca al valor fijo 1), con un margen pequeño para que el punto más alto no
   // quede pegado al borde.
   const valoresSatisfaccion = data.ccaa.map((c) => c.satisfaccion_media).filter((v) => v !== null);
@@ -221,7 +221,7 @@ function renderScatter(data) {
         // un min explícito distinto de 0 eso ya ha dado problemas de render en este
         // proyecto (ver diagnostico.js). Aquí el eje es de puntos, no de barras, pero
         // se fija igual para no depender de que el comportamiento por defecto no cambie.
-        y: { min: 0.5, max: maxEjeY, beginAtZero: false, title: { display: true, text: "Satisfacción de los viajeros" } },
+        y: { min: 0.75, max: maxEjeY, beginAtZero: false, title: { display: true, text: "Satisfacción de los viajeros" } },
       },
     },
   });
