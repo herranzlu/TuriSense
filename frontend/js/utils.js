@@ -198,6 +198,29 @@ function abrirTooltipConDireccion(layer, texto) {
     recuadroInset.classList.add("mapa-inset-con-tooltip");
     layer.once("tooltipclose", () => recuadroInset.classList.remove("mapa-inset-con-tooltip"));
   }
+
+  // Corrección final, después de pintar: todo lo de arriba elige la dirección según
+  // el tamaño DEL MAPA, pero si la página está desplazada (scroll) de forma que el
+  // mapa queda pegado arriba de lo que se ve en pantalla, "abrir hacia arriba" se
+  // sale igualmente por el borde real de la ventana, aunque dentro del mapa hubiera
+  // sitio de sobra. Aquí se mide la posición real en pantalla del tooltip ya
+  // pintado y, si se sale por cualquier lado de la ventana visible, se empuja hacia
+  // dentro con un pequeño margen. El mapa no hace pan ni zoom (está fijo), así que
+  // esta corrección no se deshace sola después de aplicarla.
+  requestAnimationFrame(() => {
+    const tip = layer.getTooltip?.();
+    const elTip = tip?.getElement?.();
+    if (!elTip) return;
+    const MARGEN = 8;
+    const r = elTip.getBoundingClientRect();
+    let dx = 0;
+    let dy = 0;
+    if (r.left < MARGEN) dx = MARGEN - r.left;
+    else if (r.right > window.innerWidth - MARGEN) dx = window.innerWidth - MARGEN - r.right;
+    if (r.top < MARGEN) dy = MARGEN - r.top;
+    else if (r.bottom > window.innerHeight - MARGEN) dy = window.innerHeight - MARGEN - r.bottom;
+    if (dx || dy) elTip.style.transform += ` translate(${dx}px, ${dy}px)`;
+  });
 }
 
 /**
