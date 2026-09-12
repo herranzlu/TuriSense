@@ -9,11 +9,54 @@ hace un groupby/merge de agregación para servir la respuesta, nunca una predicc
 nueva. Esa es la regla de arquitectura de la diapositiva 6 y del apartado 2 de
 DICCIONARIO.md: "el backend no recalcula nada".
 """
+import unicodedata
 from functools import lru_cache
 
 import pandas as pd
 
 from . import config
+
+# --- Normalización del nombre de ciudad (entity_ciudad.parquet, ver build_entity_ciudad.py) --
+# `ciudad` es texto libre (columna `destination` de reviews_master, tal cual la escribió
+# quien redactó la reseña): la misma ciudad aparece con mayúsculas sueltas ("Madrid" y
+# "madrid") o, para un puñado de topónimos gallegos, en su forma castellana en vez de la
+# oficial ("La Coruña"/"la coruna" en vez de "A Coruña", "Orense" en vez de "Ourense",
+# "Sangenjo"/"Sanjenjo" en vez de "Sanxenxo", "El Grove" en vez de "O Grove"). Sin esto,
+# el filtro de ciudad del recomendador mostraba la misma ciudad varias veces como si
+# fueran distintas. Se corrige una sola vez aquí (cacheado); todo lo que llame a
+# cargar_entity_ciudad() recibe ya el nombre limpio.
+_ALIAS_TOPONIMO = {
+    "la coruna": "a coruna",
+    "orense": "ourense",
+    "sangenjo": "sanxenxo",
+    "sanjenjo": "sanxenxo",
+    "el grove": "o grove",
+}
+
+
+def _clave_ciudad(nombre: str) -> str:
+    clave = unicodedata.normalize("NFKD", nombre).encode("ascii", "ignore").decode().lower().strip()
+    return _ALIAS_TOPONIMO.get(clave, clave)
+
+
+def _normalizar_ciudades(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    con_ciudad = df["ciudad"].notna()
+    claves = df.loc[con_ciudad, "ciudad"].apply(_clave_ciudad)
+    conteo = df.loc[con_ciudad, "ciudad"].value_counts()
+
+    # Entre las grafías que comparten clave, se prefiere la que tiene alguna mayúscula
+    # (nunca "madrid" en vez de "Madrid") y, entre esas, la más frecuente en los datos:
+    # así la forma oficial gallega ("A Coruña", ya la más usada aquí) no pierde frente
+    # a variantes minúsculas o castellanas, y en el resto de casos gana la grafía que de
+    # verdad usa la mayoría de reseñas, no una elegida a ciegas.
+    def _mejor(nombres):
+        candidatas = [n for n in nombres if n != n.lower()] or list(nombres)
+        return max(candidatas, key=lambda n: conteo[n])
+
+    canonico = df.loc[con_ciudad, "ciudad"].groupby(claves).agg(lambda s: _mejor(s.unique()))
+    df.loc[con_ciudad, "ciudad"] = claves.map(canonico)
+    return df
 
 
 @lru_cache
@@ -60,7 +103,7 @@ def cargar_perfil_lugares() -> pd.DataFrame:
 
 @lru_cache
 def cargar_entity_ciudad() -> pd.DataFrame:
-    return pd.read_parquet(config.ENTITY_CIUDAD_PARQUET)
+    return _normalizar_ciudades(pd.read_parquet(config.ENTITY_CIUDAD_PARQUET))
 
 
 @lru_cache

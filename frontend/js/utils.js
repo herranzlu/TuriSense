@@ -153,11 +153,12 @@ function estiloPorValor(feature, valores, opts) {
 }
 
 // Abre el tooltip de `layer` en el lado con más espacio libre dentro de SU PROPIO
-// mapa (el principal o el recuadro-inset de Canarias, cada uno con su propio
-// tamaño): compara el margen a los 4 bordes desde el centro de la forma y abre
-// hacia el eje/lado con más margen, así el cuadro se aleja siempre del borde más
-// cercano en vez de salirse por él. Se recalcula en cada apertura (no una vez al
-// cargar) porque en ese momento el mapa aún no tiene su tamaño final ajustado.
+// mapa (el principal o cualquiera de los recuadros-inset -Canarias, Ceuta,
+// Melilla-, cada uno con su propio tamaño): compara el margen a los 4 bordes desde
+// el centro de la forma y abre hacia el eje/lado con más margen, así el cuadro se
+// aleja siempre del borde más cercano en vez de salirse por él. Se recalcula en
+// cada apertura (no una vez al cargar) porque en ese momento el mapa aún no tiene
+// su tamaño final ajustado.
 function abrirTooltipConDireccion(layer, texto) {
   const mapa = layer._map;
   if (!mapa) return;
@@ -166,15 +167,18 @@ function abrirTooltipConDireccion(layer, texto) {
   let anclaEn, direccion, claseExtra;
 
   if (recuadroInset) {
-    // El recuadro de Canarias es tan pequeño (132x108) y está tan pegado a la
-    // esquina inferior izquierda del mapa grande que calcular la dirección con el
-    // margen DE ESE RECUADRO no sirve: en cuanto el tooltip escapa de él (ver más
-    // abajo), lo que de verdad importa es el margen dentro del MAPA GRANDE, no
-    // dentro de la cajita. "Arriba" siempre aleja del borde inferior (el único
-    // pegado); y para no salirse por la izquierda (el recuadro está a solo 10px de
-    // ese borde), el tooltip se ancla al borde derecho del propio recuadro, no al
-    // punto exacto de la isla pinchada — así siempre hay sitio de sobra a ambos lados.
-    anclaEn = mapa.containerPointToLatLng([tam.x, tam.y / 2]);
+    // Todos los recuadros-inset son tan pequeños, y están tan pegados a una esquina
+    // inferior del mapa grande, que calcular la dirección con el margen DE ESE
+    // RECUADRO no sirve: en cuanto el tooltip escapa de él (ver más abajo), lo que
+    // de verdad importa es el margen dentro del MAPA GRANDE, no dentro de la
+    // cajita. "Arriba" siempre aleja del borde inferior (el único pegado en
+    // cualquiera de los recuadros); para el lado horizontal, cada recuadro declara
+    // en su propio marcado (data-ancla) el borde de sí mismo contrario a la esquina
+    // del mapa grande a la que está pegado (Canarias, a la izquierda, ancla a la
+    // derecha; Ceuta y Melilla, a la derecha, anclan a la izquierda), así el
+    // tooltip siempre se abre hacia el centro del mapa, con sitio de sobra.
+    const x = recuadroInset.dataset.ancla === "left" ? 0 : tam.x;
+    anclaEn = mapa.containerPointToLatLng([x, tam.y / 2]);
     direccion = "top";
     claseExtra = " tooltip-ccaa-inset";
   } else {
@@ -223,19 +227,44 @@ function abrirTooltipConDireccion(layer, texto) {
   });
 }
 
+// Canarias, Ceuta y Melilla se pintan aparte, cada una en su propio recuadro-inset
+// fijo (como en los mapas oficiales del INE): a la escala de España peninsular,
+// Canarias queda a miles de km y Ceuta/Melilla miden apenas ~10km de lado, así que
+// las tres se reducen a un puñado de píxeles (Ceuta y Melilla, literalmente 2-3px:
+// ahí es donde Melilla "no aparecía" en el mapa) y quedan invisibles e imposibles
+// de pinchar dentro del mapa grande. Cada recuadro usa la MISMA silueta del geojson
+// que ya usa el resto del mapa (nunca una geometría artificial ni un duplicado: se
+// excluyen del mapa grande para que cada una se vea en un único sitio).
+const DEFINICION_INSETS = [
+  { nombre: "Canarias", clase: "mapa-inset-canarias", ancla: "right", padding: [4, 4], enGrupo: null },
+  { nombre: "Ceuta", clase: "mapa-inset-pequeno", ancla: "left", padding: [6, 6], enGrupo: "sur" },
+  { nombre: "Melilla", clase: "mapa-inset-pequeno", ancla: "left", padding: [6, 6], enGrupo: "sur" },
+];
+const NOMBRES_INSET = DEFINICION_INSETS.map((d) => d.nombre);
+
+// Sin mapa de calles de fondo, a propósito: solo las siluetas de las CCAA sobre
+// un fondo plano, como una ilustración, sin nombres de países ni carreteras
+// alrededor tirando de la atención.
+const OPCIONES_ESTATICAS = {
+  zoomControl: false,
+  attributionControl: false,
+  dragging: false,
+  scrollWheelZoom: false,
+  doubleClickZoom: false,
+  boxZoom: false,
+  touchZoom: false,
+  keyboard: false,
+};
+
 /**
  * Crea (si hace falta) un mapa Leaflet en `containerId` y devuelve una función
  * `pintar(valores, opts)` para colorear las CCAA. `valores` es un objeto
  * { [nombreGeojson]: numero|null }.
- *
- * Canarias se pinta aparte, en un recuadro-inset fijo (como en los mapas
- * oficiales del INE): a la escala de España peninsular, el archipiélago queda
- * a miles de km y se reduce a unos pocos píxeles casi invisibles.
  */
 export async function crearMapaCoropletico(containerId) {
   const geojson = await cargarGeojson();
-  const geoCanarias = { type: "FeatureCollection", features: geojson.features.filter((f) => f.properties.name === "Canarias") };
-  const geoResto = { type: "FeatureCollection", features: geojson.features.filter((f) => f.properties.name !== "Canarias") };
+  const geoDe = (nombre) => ({ type: "FeatureCollection", features: geojson.features.filter((f) => f.properties.name === nombre) });
+  const geoResto = { type: "FeatureCollection", features: geojson.features.filter((f) => !NOMBRES_INSET.includes(f.properties.name)) };
 
   const contenedor = el(containerId);
   contenedor.innerHTML = "";
@@ -245,30 +274,24 @@ export async function crearMapaCoropletico(containerId) {
   divPrincipal.style.cssText = "position:absolute; inset:0;";
   contenedor.appendChild(divPrincipal);
 
-  const divInset = document.createElement("div");
-  divInset.className = "mapa-inset";
-  divInset.innerHTML = `<span class="mapa-inset-label">Canarias</span><div class="mapa-inset-mapa"></div>`;
-  contenedor.appendChild(divInset);
-
-  // Sin mapa de calles de fondo, a propósito: solo las siluetas de las CCAA sobre
-  // un fondo plano, como una ilustración, sin nombres de países ni carreteras
-  // alrededor tirando de la atención.
-  const OPCIONES_ESTATICAS = {
-    zoomControl: false,
-    attributionControl: false,
-    dragging: false,
-    scrollWheelZoom: false,
-    doubleClickZoom: false,
-    boxZoom: false,
-    touchZoom: false,
-    keyboard: false,
-  };
+  const divSur = document.createElement("div");
+  divSur.className = "mapa-insets-sur";
+  contenedor.appendChild(divSur);
 
   const mapa = L.map(divPrincipal, OPCIONES_ESTATICAS);
-  const mapaInset = L.map(divInset.querySelector(".mapa-inset-mapa"), OPCIONES_ESTATICAS);
-
-  let capa, capaInset;
+  let capa;
   let capasPorNombre = {}; // nombre (geojson) -> layer, para poder resaltar una CCAA concreta desde fuera
+
+  // insets: nombre (geojson) -> { def, geo, mapa: instancia Leaflet propia, capa }
+  const insets = {};
+  for (const def of DEFINICION_INSETS) {
+    const div = document.createElement("div");
+    div.className = `mapa-inset ${def.clase}`;
+    div.dataset.ancla = def.ancla;
+    div.innerHTML = `<span class="mapa-inset-label">${def.nombre}</span><div class="mapa-inset-mapa"></div>`;
+    (def.enGrupo === "sur" ? divSur : contenedor).appendChild(div);
+    insets[def.nombre] = { def, geo: geoDe(def.nombre), mapa: L.map(div.querySelector(".mapa-inset-mapa"), OPCIONES_ESTATICAS), capa: null };
+  }
 
   function pintar(valores, { min, max, colorBajo = "#F3F0EC", colorAlto = "#D40E14", tooltip, sinDato = "#E7E2DB", coloresDirectos, onClick } = {}) {
     const nums = Object.values(valores).filter((v) => v !== null && v !== undefined);
@@ -282,11 +305,11 @@ export async function crearMapaCoropletico(containerId) {
       const v = valores[nombre];
       const texto = tooltip ? tooltip(nombre, v) : `${nombre}: ${v ?? "sin dato"}`;
       // "sticky" (seguir al ratón) es lo primero que revienta con formas diminutas
-      // (Ceuta, Melilla) o dentro del recuadro pequeño de Canarias: el cursor casi
-      // siempre está pegado a un borde, así que el tooltip se sale por ese mismo
-      // borde. En su lugar, se abre anclado al centro de la propia forma y se elige,
-      // en cada apertura, hacia qué lado hay más sitio dentro del mapa: siempre se
-      // abre alejándose del borde más cercano, nunca hacia él.
+      // o dentro de un recuadro pequeño: el cursor casi siempre está pegado a un
+      // borde, así que el tooltip se sale por ese mismo borde. En su lugar, se abre
+      // anclado al centro de la propia forma y se elige, en cada apertura, hacia
+      // qué lado hay más sitio dentro del mapa: siempre se abre alejándose del
+      // borde más cercano, nunca hacia él.
       layer.on("mouseover click", () => abrirTooltipConDireccion(layer, texto));
       if (onClick) layer.on("click", () => onClick(nombre));
     };
@@ -295,16 +318,18 @@ export async function crearMapaCoropletico(containerId) {
     capa = L.geoJSON(geoResto, { style: (f) => estiloPorValor(f, valores, opts), onEachFeature }).addTo(mapa);
     mapa.fitBounds(capa.getBounds(), { padding: [10, 10] });
 
-    if (capaInset) mapaInset.removeLayer(capaInset);
-    capaInset = L.geoJSON(geoCanarias, { style: (f) => estiloPorValor(f, valores, opts), onEachFeature }).addTo(mapaInset);
-    mapaInset.fitBounds(capaInset.getBounds(), { padding: [4, 4] });
+    for (const inset of Object.values(insets)) {
+      if (inset.capa) inset.mapa.removeLayer(inset.capa);
+      inset.capa = L.geoJSON(inset.geo, { style: (f) => estiloPorValor(f, valores, opts), onEachFeature }).addTo(inset.mapa);
+      inset.mapa.fitBounds(inset.capa.getBounds(), { padding: inset.def.padding });
+    }
   }
 
   // Resalta una única CCAA (borde grueso oscuro) y devuelve el resto a su estilo normal;
   // sin argumento (o nombre inexistente) simplemente quita cualquier resaltado activo.
   function resaltar(nombreGeojson) {
     Object.entries(capasPorNombre).forEach(([nombre, layer]) => {
-      const grupo = nombre === "Canarias" ? capaInset : capa;
+      const grupo = insets[nombre] ? insets[nombre].capa : capa;
       grupo.resetStyle(layer);
     });
     const objetivo = capasPorNombre[nombreGeojson];

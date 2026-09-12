@@ -47,4 +47,11 @@ class PreferenciasRecomendador(BaseModel):
     )
 
     def pesos_validados(self) -> dict[str, float]:
-        return {k: v for k, v in self.pesos_aspectos.items() if k in config.ASPECTO_KEYS and v > 0}
+        # Filtra también por tipo_experiencia: un peso para un aspecto que no aplica a
+        # ese tipo (p.ej. "descanso_ruido" con tipo_experiencia="restauracion") se
+        # descarta aquí, en el único sitio que usa el motor para puntuar. Así, aunque el
+        # frontend tuviera un slider desincronizado o mandara un valor antiguo, nunca
+        # llega a influir en el cálculo: no hace falta confiar en que el cliente oculte
+        # bien sus controles.
+        aplicables = config.aspectos_por_tipo_experiencia(self.tipo_experiencia)
+        return {k: v for k, v in self.pesos_aspectos.items() if k in config.ASPECTO_KEYS and k in aplicables and v > 0}

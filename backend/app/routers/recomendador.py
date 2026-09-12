@@ -213,6 +213,15 @@ def filtros_recomendador():
             for t in ["alojamiento", "restauracion", "ocio", "otro"]
             if conteo.get(t, 0) > 0
         ],
+        # Qué aspectos mostrar (y dejar ponderar) según el tipo de experiencia elegido:
+        # una sola fuente de verdad (config.ASPECTOS_POR_TIPO_EXPERIENCIA), para que el
+        # frontend no repita esta lista por su cuenta y quede descoordinada del cálculo
+        # real (ver PreferenciasRecomendador.pesos_validados). "todas" es la lista
+        # completa, para cuando no se ha elegido ningún tipo concreto.
+        "aspectos_por_tipo": {
+            "todas": config.ASPECTO_KEYS_VISIBLES,
+            **{t: config.aspectos_por_tipo_experiencia(t) for t in ["alojamiento", "restauracion", "ocio", "otro"]},
+        },
     }
 
 

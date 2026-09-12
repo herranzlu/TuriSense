@@ -7,6 +7,17 @@ let topNActual = 15;
 const PASO_VER_MAS = 15;
 const TOP_N_MAXIMO = 200;
 
+// Ciudades agrupadas por CCAA, tal como las devuelve /recomendar/filtros: se guardan
+// aquí (en vez de releer el DOM) para poder reconstruir el selector de Ciudad cada vez
+// que cambia el de Territorio, sin otra llamada al backend.
+let ciudadesPorCcaa = {};
+// aspectos: la lista completa de los 11 (para poder pintar cada slider una sola vez).
+// aspectosPorTipo: qué claves de esas mostrar según el tipo_experiencia elegido (ver
+// config.ASPECTOS_POR_TIPO_EXPERIENCIA en el backend: una sola fuente de verdad, no
+// una copia de la lista mantenida aparte en el frontend).
+let aspectosTodos = [];
+let aspectosPorTipo = {};
+
 // Dos aspectos se prestan a confusión si se leen como si fueran un filtro físico
 // (kilómetros, euros) en vez de lo que de verdad son: qué tan bien habla la gente de
 // eso en sus reseñas. Aunque ahora hay coordenadas reales por entity_id (ver
@@ -26,26 +37,66 @@ const ACLARACION_ASPECTO = {
 // lista la siguen usando tal cual el mapa de calor, el ranking y la ficha de destino.
 const ASPECTO_OCULTO_EN_RECOMENDADOR = "masificacion";
 
+// Reconstruye el selector de Ciudad a partir de ciudadesPorCcaa, respetando el
+// territorio actualmente elegido: "todas" muestra todas las ciudades agrupadas por
+// CCAA (con <optgroup>, son más de 300: una lista plana sería inmanejable); una CCAA
+// concreta muestra solo sus ciudades, sin agrupar (agrupar por una sola CCAA no
+// aporta nada). Si la ciudad que estaba seleccionada ya no pertenece al territorio
+// elegido, se resetea a "Cualquiera" en vez de dejar un filtro imposible aplicado sin
+// que se note en el desplegable.
+function actualizarCiudadesPorTerritorio() {
+  const territorio = el("rec-territorio").value;
+  const ciudadPrevia = el("rec-ciudad").value;
+
+  const opciones =
+    territorio === "todas"
+      ? Object.entries(ciudadesPorCcaa)
+          .map(
+            ([ccaa, ciudades]) =>
+              `<optgroup label="${ccaa}">${ciudades.map((c) => `<option value="${c.ciudad}">${c.ciudad} (${fmtNum(c.n_lugares)})</option>`).join("")}</optgroup>`,
+          )
+          .join("")
+      : (ciudadesPorCcaa[territorio] ?? []).map((c) => `<option value="${c.ciudad}">${c.ciudad} (${fmtNum(c.n_lugares)})</option>`).join("");
+
+  el("rec-ciudad").innerHTML = `<option value="todas">Cualquiera</option>${opciones}`;
+
+  const sigueDisponible = territorio === "todas" || (ciudadesPorCcaa[territorio] ?? []).some((c) => c.ciudad === ciudadPrevia);
+  el("rec-ciudad").value = sigueDisponible ? ciudadPrevia : "todas";
+}
+
+// Todos los sliders se pintan una sola vez (siempre en el DOM, con su peso guardado):
+// cambiar de tipo de experiencia solo oculta los que no aplican, nunca los destruye,
+// así no se pierde lo que el usuario ya había ajustado si vuelve a un tipo anterior.
+// Los aspectos ocultos, además, se ponen a 0: así la barra de progreso y el número
+// que se ven en pantalla nunca mienten sobre lo que de verdad se va a usar (el
+// backend, aparte, ya los ignora siempre pase lo que pase en el frontend: ver
+// pesos_validados en schemas.py).
+function actualizarAspectosVisibles() {
+  const tipo = el("rec-tipo").value;
+  const aplicables = new Set(aspectosPorTipo[tipo] ?? aspectosPorTipo.todas ?? aspectosTodos.map((a) => a.key));
+  el("rec-aspectos").querySelectorAll(".aspecto-slider").forEach((div) => {
+    const input = div.querySelector(".peso-aspecto");
+    const visible = aplicables.has(input.dataset.aspecto);
+    div.hidden = !visible;
+    if (!visible && input.value !== "0") {
+      input.value = "0";
+      el(`val-${input.dataset.aspecto}`).textContent = "0.0";
+    }
+  });
+}
+
 async function poblarFiltros() {
   const [filtros, aspectos] = await Promise.all([api.get("/recomendar/filtros"), api.get("/aspectos")]);
 
   llenarSelect(el("rec-territorio"), filtros.territorios);
   el("rec-territorio").insertAdjacentHTML("afterbegin", `<option value="todas" selected>Toda España</option>`);
 
-  // Ciudades agrupadas por CCAA (con <optgroup>): son más de 300, una lista plana
-  // sería inmanejable. El filtro sigue siendo por ciudad, no por cercanía a un punto
-  // exacto (eso sería una función nueva de "buscar cerca de mí", no solo mostrar la
-  // coordenada ya disponible); la ciudad sigue siendo el filtro real de esta pantalla.
-  const porCcaa = {};
-  for (const c of filtros.ciudades) (porCcaa[c.ccaa] ??= []).push(c);
-  el("rec-ciudad").innerHTML =
-    `<option value="todas" selected>Cualquiera</option>` +
-    Object.entries(porCcaa)
-      .map(
-        ([ccaa, ciudades]) =>
-          `<optgroup label="${ccaa}">${ciudades.map((c) => `<option value="${c.ciudad}">${c.ciudad} (${fmtNum(c.n_lugares)})</option>`).join("")}</optgroup>`,
-      )
-      .join("");
+  // El filtro sigue siendo por ciudad, no por cercanía a un punto exacto (eso sería
+  // una función nueva de "buscar cerca de mí", no solo mostrar la coordenada ya
+  // disponible); la ciudad sigue siendo el filtro real de esta pantalla.
+  ciudadesPorCcaa = {};
+  for (const c of filtros.ciudades) (ciudadesPorCcaa[c.ccaa] ??= []).push(c);
+  actualizarCiudadesPorTerritorio();
 
   llenarSelect(
     el("rec-tipo"),
@@ -54,11 +105,16 @@ async function poblarFiltros() {
   );
   el("rec-tipo").insertAdjacentHTML("afterbegin", `<option value="todas" selected>Cualquiera</option>`);
 
+  // aspectos_por_tipo viene del backend (config.ASPECTOS_POR_TIPO_EXPERIENCIA): una
+  // sola fuente de verdad para qué aspectos aplican a cada tipo, en vez de mantener
+  // aquí una copia que se pueda desincronizar del cálculo real.
+  aspectosTodos = aspectos.aspectos.filter((a) => a.key !== ASPECTO_OCULTO_EN_RECOMENDADOR);
+  aspectosPorTipo = filtros.aspectos_por_tipo ?? {};
+
   // Sin tocar ningún slider, el motor ordena por satisfacción general (igual que el
   // motor real cuando no recibe ninguna preferencia de aspecto).
   const contenedor = el("rec-aspectos");
-  contenedor.innerHTML = aspectos.aspectos
-    .filter((a) => a.key !== ASPECTO_OCULTO_EN_RECOMENDADOR)
+  contenedor.innerHTML = aspectosTodos
     .map((a) => {
       const aclaracion = ACLARACION_ASPECTO[a.key] ? `<span class="muted" style="display:block;font-size:.7rem">${ACLARACION_ASPECTO[a.key]}</span>` : "";
       return `
@@ -75,6 +131,7 @@ async function poblarFiltros() {
       el(`val-${input.dataset.aspecto}`).textContent = Number(input.value).toFixed(1);
     });
   });
+  actualizarAspectosVisibles();
 }
 
 function leerPreferencias(topN) {
@@ -207,6 +264,12 @@ export async function render() {
   inicializado = true;
 
   await poblarFiltros();
+
+  // Ciudad depende de Territorio: cambiar de CCAA actualiza al momento las ciudades
+  // disponibles (sin recargar la página) y resetea la selección si deja de encajar.
+  el("rec-territorio").addEventListener("change", actualizarCiudadesPorTerritorio);
+  // Los sliders visibles dependen del tipo de experiencia: ver actualizarAspectosVisibles.
+  el("rec-tipo").addEventListener("change", actualizarAspectosVisibles);
 
   // El código de referencia (entity_id) no se muestra de primeras, solo si se pincha,
   // igual que se decidió para "informarse más" sin ensuciar la tarjeta con un hash.

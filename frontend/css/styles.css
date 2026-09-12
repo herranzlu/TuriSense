@@ -432,6 +432,12 @@ select, input[type="text"] {
 .aspectos-sliders { display: grid; gap: .55rem; margin-bottom: 1rem; }
 .aspecto-slider { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .5rem; font-size: .85rem; }
 .aspecto-slider input[type="range"] { grid-column: 1 / -1; }
+/* Sin esto, [hidden] no ocultaría nada: un display:grid puesto por el propio CSS de la
+   página gana siempre a la regla [hidden]{display:none} del navegador, tengan o no la
+   misma especificidad (los estilos de autor van antes que los del user-agent). Los
+   aspectos que no aplican al tipo de experiencia elegido (ver recomendador.js) se
+   ocultan así, no solo se desactivan. */
+.aspecto-slider[hidden] { display: none; }
 .anti-masif { margin-bottom: 1rem; }
 .anti-masif-texto { display: flex; align-items: center; gap: .4rem; }
 .anti-masif-texto .btn-info { width: 1.15rem; height: 1.15rem; font-size: .7rem; }
@@ -493,8 +499,12 @@ input[type="range"]::-moz-range-progress { background: var(--rojo-primario); bor
 /* Fondo plano en vez de un mapa de calles real, para que se lea como ilustración */
 .mapa { height: 400px; border-radius: 8px; overflow: hidden; position: relative; background: var(--blanco); }
 .mapa .leaflet-container { background: transparent; }
+/* Base compartida por los tres recuadros-inset (Canarias, Ceuta, Melilla): el
+   tamaño y la posición de cada uno los pone su propia clase modificadora, más
+   abajo. position:relative para que la etiqueta (.mapa-inset-label) de cada
+   recuadro se ancle a SU propio recuadro y no al contenedor del mapa entero. */
 .mapa-inset {
-  position: absolute; left: 10px; bottom: 10px; width: 132px; height: 108px;
+  position: relative;
   background: var(--blanco); border: 1px solid var(--borde); border-radius: 6px;
   box-shadow: var(--sombra); z-index: 450; overflow: hidden;
 }
@@ -502,6 +512,13 @@ input[type="range"]::-moz-range-progress { background: var(--rojo-primario); bor
    abrirTooltipConDireccion en utils.js): el recuadro es demasiado pequeño para
    contener un tooltip de varias líneas sin esto. */
 .mapa-inset.mapa-inset-con-tooltip { overflow: visible; }
+.mapa-inset-canarias { position: absolute; left: 10px; bottom: 10px; width: 132px; height: 108px; }
+/* Ceuta y Melilla: a escala real son casi 20 veces más pequeñas que Canarias
+   (~10km de lado cada una), así que un recuadro del tamaño del de Canarias les
+   sobraría espacio en blanco; van en su propia pareja, más abajo, en la esquina
+   opuesta para no competir por sitio con el de Canarias. */
+.mapa-insets-sur { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 8px; z-index: 450; }
+.mapa-inset-pequeno { width: 60px; height: 60px; }
 .mapa-inset-label {
   position: absolute; top: 2px; left: 6px; z-index: 451; font-size: .65rem;
   font-weight: 700; color: var(--texto-secundario); background: rgba(255,255,255,.8);

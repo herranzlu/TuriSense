@@ -75,6 +75,46 @@ ASPECTO_KEYS = [a["key"] for a in ASPECTOS]
 ASPECTO_LABEL_BY_KEY = {a["key"]: a["label"] for a in ASPECTOS}
 ASPECTO_COL_PERFIL_BY_KEY = {a["key"]: a["col_perfil"] for a in ASPECTOS}
 
+# --- Qué aspectos tiene sentido pedir según el tipo de experiencia --------------------
+# No es una intuición: sale de medir, en perfil_lugares.parquet, qué % de lugares de
+# cada tipo_experiencia (ver clasificar_tipo_experiencia en recomendador.py) tiene
+# evidencia suficiente (>= MIN_MENCIONES_PERFIL menciones) en cada aspecto. Corte en
+# 15%: por debajo, casi ningún lugar de ese tipo tiene datos para ese aspecto, así que
+# subir su peso apenas cambiaría el orden y solo añade un control que no sirve de nada.
+#
+#                          % de lugares de ese tipo con evidencia suficiente
+#                          alojamiento  restauracion  ocio
+#   trato_anfitrion            51.0         60.1       34.5
+#   ubicacion                  44.0          2.1       42.2
+#   equipamiento               40.1          2.4        7.3
+#   limpieza                   24.9          0.3       12.5
+#   descanso_ruido             18.5          3.0       14.6
+#   aparcamiento                9.5          0.0       11.1
+#   desayuno_restauracion       7.3         70.7       10.3
+#   autenticidad               10.0          5.0       15.0
+#   vistas                      4.1          2.4       21.5
+#   precio                      4.2         25.4       26.8
+#
+# "otro" (property_type que no encaja en ningún patrón conocido, un 0,2% del total) no
+# tiene una identidad propia lo bastante clara como para recortar su lista: se trata
+# igual que "todas" (todos los aspectos visibles). "masificacion" no aparece en ninguna
+# lista: ya tiene su propio control ("Evitar masificaciones"), no un slider más (ver
+# ASPECTO_OCULTO_EN_RECOMENDADOR en recomendador.js, frontend).
+ASPECTOS_POR_TIPO_EXPERIENCIA = {
+    "alojamiento": ["trato_anfitrion", "ubicacion", "equipamiento", "limpieza", "descanso_ruido"],
+    "restauracion": ["desayuno_restauracion", "trato_anfitrion", "precio"],
+    "ocio": ["ubicacion", "trato_anfitrion", "precio", "vistas", "autenticidad"],
+}
+ASPECTO_KEYS_VISIBLES = [k for k in ASPECTO_KEYS if k != "masificacion"]
+
+
+def aspectos_por_tipo_experiencia(tipo_experiencia: str | None) -> list[str]:
+    """Aspectos aplicables a un tipo de experiencia. 'todas'/'otro'/None (sin tipo
+    elegido) devuelven la lista completa: no hay razón para ocultar nada."""
+    if tipo_experiencia and tipo_experiencia in ASPECTOS_POR_TIPO_EXPERIENCIA:
+        return ASPECTOS_POR_TIPO_EXPERIENCIA[tipo_experiencia]
+    return ASPECTO_KEYS_VISIBLES
+
 # --- Umbrales mínimos de evidencia -----------------------------------------------------
 # El contrato Rol4 -> Rol6 exige: "ocultar o marcar las celdas de opinión con
 # support_ge_30=false". Usamos el mismo umbral a nivel de lugar individual.
