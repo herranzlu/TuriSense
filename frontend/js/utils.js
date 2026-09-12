@@ -101,11 +101,38 @@ export function rangoAjustado(valores, { paso = 5, minAbsoluto = 0, maxAbsoluto 
   return { min, max };
 }
 
+// Área aproximada de un anillo (fórmula del cordón/shoelace, en grados²): no hace
+// falta más precisión que comparar dos anillos de la misma feature entre sí.
+function _areaAnillo(anillo) {
+  let area = 0;
+  for (let i = 0; i < anillo.length; i++) {
+    const [x1, y1] = anillo[i];
+    const [x2, y2] = anillo[(i + 1) % anillo.length];
+    area += x1 * y2 - x2 * y1;
+  }
+  return Math.abs(area) / 2;
+}
+
+// El geojson de Ceuta trae, además de su núcleo urbano, dos islotes de soberanía
+// española administrados junto a ella (Isla del Perejil y Peñón de Vélez de la
+// Gomera), a varios km de distancia y sin apenas superficie. A la escala de un
+// mapa de toda España se ven como un punto suelto y aislado del resto de la
+// silueta: de un vistazo se puede leer como "Ceuta aparece dos veces". No se
+// borra nada del fichero de origen: solo, para ESTA silueta del mapa, nos
+// quedamos con el polígono de mayor superficie real (el núcleo urbano).
+function _simplificarCeuta(feature) {
+  if (feature.properties.name !== "Ceuta" || feature.geometry.type !== "MultiPolygon") return feature;
+  const principal = feature.geometry.coordinates.reduce((mayor, poligono) => (_areaAnillo(poligono[0]) > _areaAnillo(mayor[0]) ? poligono : mayor));
+  return { ...feature, geometry: { type: "Polygon", coordinates: principal } };
+}
+
 let geojsonCache = null;
 async function cargarGeojson() {
   if (!geojsonCache) {
     const res = await fetch("data/ccaa.geojson");
-    geojsonCache = await res.json();
+    const data = await res.json();
+    data.features = data.features.map(_simplificarCeuta);
+    geojsonCache = data;
   }
   return geojsonCache;
 }
@@ -123,6 +150,54 @@ function estiloPorValor(feature, valores, opts) {
   // Borde en gris claro, no blanco: con el mapa ahora sobre fondo blanco, un borde
   // blanco se fundiría con el fondo y las CCAA perderían su silueta.
   return { fillColor: color, fillOpacity: 1, color: "#D7D2C3", weight: 1.5 };
+}
+
+// Abre el tooltip de `layer` en el lado con más espacio libre dentro de SU PROPIO
+// mapa (el principal o el recuadro-inset de Canarias, cada uno con su propio
+// tamaño): compara el margen a los 4 bordes desde el centro de la forma y abre
+// hacia el eje/lado con más margen, así el cuadro se aleja siempre del borde más
+// cercano en vez de salirse por él. Se recalcula en cada apertura (no una vez al
+// cargar) porque en ese momento el mapa aún no tiene su tamaño final ajustado.
+function abrirTooltipConDireccion(layer, texto) {
+  const mapa = layer._map;
+  if (!mapa) return;
+  const recuadroInset = mapa.getContainer().closest(".mapa-inset");
+  const tam = mapa.getSize();
+  let anclaEn, direccion, claseExtra;
+
+  if (recuadroInset) {
+    // El recuadro de Canarias es tan pequeño (132x108) y está tan pegado a la
+    // esquina inferior izquierda del mapa grande que calcular la dirección con el
+    // margen DE ESE RECUADRO no sirve: en cuanto el tooltip escapa de él (ver más
+    // abajo), lo que de verdad importa es el margen dentro del MAPA GRANDE, no
+    // dentro de la cajita. "Arriba" siempre aleja del borde inferior (el único
+    // pegado); y para no salirse por la izquierda (el recuadro está a solo 10px de
+    // ese borde), el tooltip se ancla al borde derecho del propio recuadro, no al
+    // punto exacto de la isla pinchada — así siempre hay sitio de sobra a ambos lados.
+    anclaEn = mapa.containerPointToLatLng([tam.x, tam.y / 2]);
+    direccion = "top";
+    claseExtra = " tooltip-ccaa-inset";
+  } else {
+    const centro = mapa.latLngToContainerPoint(layer.getBounds ? layer.getBounds().getCenter() : layer.getLatLng());
+    const espacio = { left: centro.x, right: tam.x - centro.x, top: centro.y, bottom: tam.y - centro.y };
+    direccion = Object.entries(espacio).sort((a, b) => b[1] - a[1])[0][0];
+    anclaEn = null; // se abre en su propio punto, sin forzar ancla
+    claseExtra = "";
+  }
+
+  layer.unbindTooltip();
+  layer.bindTooltip(texto, { direction: direccion, sticky: false, opacity: 0.97, className: `tooltip-ccaa${claseExtra}` });
+  if (anclaEn) layer.openTooltip(anclaEn);
+  else layer.openTooltip();
+
+  // El recuadro de Canarias recorta su contenido en reposo, para que sus esquinas
+  // redondeadas no dejen ver el cuadrado del mapa interior; mientras el tooltip esté
+  // abierto se permite que sobresalga (si no, por pequeño que sea el recuadro, el
+  // tooltip siempre quedaría cortado), y se recorta de nuevo en cuanto se cierra.
+  if (recuadroInset) {
+    recuadroInset.classList.add("mapa-inset-con-tooltip");
+    layer.once("tooltipclose", () => recuadroInset.classList.remove("mapa-inset-con-tooltip"));
+  }
 }
 
 /**
@@ -183,7 +258,13 @@ export async function crearMapaCoropletico(containerId) {
       capasPorNombre[nombre] = layer;
       const v = valores[nombre];
       const texto = tooltip ? tooltip(nombre, v) : `${nombre}: ${v ?? "sin dato"}`;
-      layer.bindTooltip(texto, { sticky: true });
+      // "sticky" (seguir al ratón) es lo primero que revienta con formas diminutas
+      // (Ceuta, Melilla) o dentro del recuadro pequeño de Canarias: el cursor casi
+      // siempre está pegado a un borde, así que el tooltip se sale por ese mismo
+      // borde. En su lugar, se abre anclado al centro de la propia forma y se elige,
+      // en cada apertura, hacia qué lado hay más sitio dentro del mapa: siempre se
+      // abre alejándose del borde más cercano, nunca hacia él.
+      layer.on("mouseover click", () => abrirTooltipConDireccion(layer, texto));
       if (onClick) layer.on("click", () => onClick(nombre));
     };
 

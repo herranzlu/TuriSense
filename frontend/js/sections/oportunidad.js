@@ -159,6 +159,16 @@ function renderScatter(data) {
   const m = data.mediana_presion_turistica;
   const n = data.mediana_satisfaccion;
 
+  // La satisfacción real de las 19 CCAA se mueve siempre en una banda muy estrecha
+  // (normalmente 0,85-0,97): con el eje fijo en 0-1, más de la mitad del gráfico
+  // quedaba vacío y las diferencias reales entre comunidades apenas se apreciaban.
+  // El eje empieza en 0,5 (fijo) y el máximo se ajusta al dato real de cada carga
+  // (nunca al valor fijo 1), con un margen pequeño para que el punto más alto no
+  // quede pegado al borde.
+  const valoresSatisfaccion = data.ccaa.map((c) => c.satisfaccion_media).filter((v) => v !== null);
+  const maxDato = valoresSatisfaccion.length ? Math.max(...valoresSatisfaccion) : 1;
+  const maxEjeY = Math.min(1, Math.ceil((maxDato + 0.02) * 20) / 20);
+
   const ctx = el("chart-oportunidad-scatter").getContext("2d");
   if (scatter) scatter.destroy();
   scatter = new Chart(ctx, {
@@ -207,7 +217,11 @@ function renderScatter(data) {
       },
       scales: {
         x: { min: 0, max: 1, title: { display: true, text: "Presión turística" } },
-        y: { min: 0, max: 1, title: { display: true, text: "Satisfacción de los viajeros" } },
+        // beginAtZero:false a propósito: Chart.js lo pone a true por defecto, y con
+        // un min explícito distinto de 0 eso ya ha dado problemas de render en este
+        // proyecto (ver diagnostico.js). Aquí el eje es de puntos, no de barras, pero
+        // se fija igual para no depender de que el comportamiento por defecto no cambie.
+        y: { min: 0.5, max: maxEjeY, beginAtZero: false, title: { display: true, text: "Satisfacción de los viajeros" } },
       },
     },
   });

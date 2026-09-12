@@ -498,6 +498,10 @@ input[type="range"]::-moz-range-progress { background: var(--rojo-primario); bor
   background: var(--blanco); border: 1px solid var(--borde); border-radius: 6px;
   box-shadow: var(--sombra); z-index: 450; overflow: hidden;
 }
+/* Mientras el tooltip de una isla está abierto, se deja de recortar (ver
+   abrirTooltipConDireccion en utils.js): el recuadro es demasiado pequeño para
+   contener un tooltip de varias líneas sin esto. */
+.mapa-inset.mapa-inset-con-tooltip { overflow: visible; }
 .mapa-inset-label {
   position: absolute; top: 2px; left: 6px; z-index: 451; font-size: .65rem;
   font-weight: 700; color: var(--texto-secundario); background: rgba(255,255,255,.8);
@@ -505,6 +509,17 @@ input[type="range"]::-moz-range-progress { background: var(--rojo-primario); bor
 }
 .mapa-inset-mapa { width: 100%; height: 100%; background: var(--blanco); }
 .mapa-inset-mapa .leaflet-container { background: transparent; }
+
+/* Tooltip de las CCAA en el mapa: ancho máximo fijo con salto de línea normal
+   (Leaflet, por defecto, pone las líneas en una sola sin cortar: con el nombre de
+   la comunidad más el resto de datos, eso se sale con facilidad del mapa por el
+   lado). Con esto el cuadro crece hacia abajo con el texto en vez de a lo ancho. */
+/* width fijo, no solo max-width: al ser position:absolute con white-space:normal,
+   sin un ancho explícito el navegador puede encoger la caja hasta el ancho de la
+   palabra más larga del texto en vez de usar el ancho disponible, partiendo casi
+   cada palabra en su propia línea (una caja altísima y estrechísima). */
+.tooltip-ccaa { width: 230px; white-space: normal; line-height: 1.4; }
+.tooltip-ccaa-inset { width: 190px; }
 .leyenda { display: flex; gap: .8rem; margin-top: .6rem; font-size: .78rem; color: var(--texto-secundario); flex-wrap: wrap; }
 .leyenda-item { display: flex; align-items: center; gap: .35rem; }
 .leyenda-swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
