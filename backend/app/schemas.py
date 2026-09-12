@@ -17,9 +17,9 @@ class PreferenciasRecomendador(BaseModel):
     ciudad: str | None = Field(
         default=None,
         description=(
-            "Nombre de una ciudad (ver /api/recomendar/filtros), o None/'todas'. No hay coordenadas en los "
-            "datos de origen, así que esto es lo más parecido a un filtro de 'cerca de mí' que se puede ofrecer "
-            "honestamente: por ciudad, no por kilómetros exactos."
+            "Nombre de una ciudad (ver /api/recomendar/filtros), o None/'todas'. El filtro sigue siendo por "
+            "ciudad, no por kilómetros exactos: aunque cada resultado ya trae su coordenada real cuando existe "
+            "(ver entity_id_ubicacion_precisa.csv), este parámetro no busca por cercanía a un punto."
         ),
     )
     pesos_aspectos: dict[str, float] = Field(

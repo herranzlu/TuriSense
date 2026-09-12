@@ -40,6 +40,11 @@ ENTITY_CIUDAD_PARQUET = RECOMENDADOR_DIR / "entity_ciudad.parquet"
 # siguen identificándose por ciudad + tipo, nunca con el título del anuncio. El filtro
 # por property_type vive en recomendador.py, junto al resto del motor.
 ENTITY_NOMBRE_CSV = RECOMENDADOR_DIR / "entity_id_nombre.csv"
+# Ubicación precisa por entity_id (lat/lon reales de la fuente original: listing de
+# Airbnb, ficha de Booking, Google Maps, TheFork o Civitatis), no el centroide de la
+# ciudad. Cubre el 97,7% de perfil_lugares; el resto queda sin coordenada (no se
+# rellena con un centroide ni con ningún otro valor aproximado).
+ENTITY_UBICACION_PRECISA_CSV = DATA_DIR / "entity_id_ubicacion_precisa.csv"
 
 REQUIRED_FILES = {
     "oficial_mensual": OFICIAL_MENSUAL_PARQUET,

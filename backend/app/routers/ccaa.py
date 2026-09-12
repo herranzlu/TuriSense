@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from .. import config, data_loader
 from .contexto import INDICADORES_DEFECTO
-from .recomendador import clasificar_tipo_experiencia, _con_nombre_real
+from .recomendador import clasificar_tipo_experiencia, _con_nombre_real, _con_ubicacion_precisa
 
 router = APIRouter()
 
@@ -34,6 +34,7 @@ def _mejor_de_tipo(perfil: pd.DataFrame, tipo: str) -> dict | None:
     if "tipo_experiencia" not in perfil.columns:
         perfil = perfil.assign(tipo_experiencia=perfil["property_type"].apply(clasificar_tipo_experiencia))
     perfil = _con_nombre_real(perfil)  # nombre real cuando no es Airbnb; ya aplica ese filtro por dentro
+    perfil = _con_ubicacion_precisa(perfil)  # lat/lon reales por entity_id, cuando existen
     candidatos = perfil[
         (perfil["tipo_experiencia"] == tipo)
         & (perfil["n_resenas"] >= config.MIN_RESENAS_RECOMENDADOR)
@@ -44,6 +45,7 @@ def _mejor_de_tipo(perfil: pd.DataFrame, tipo: str) -> dict | None:
 
     mejor = candidatos.sort_values(["pct_positivo_general", "n_resenas"], ascending=[False, False]).iloc[0]
     ciudad, nivel = _ciudad_de(mejor["entity_id"])
+    tiene_ubicacion = pd.notna(mejor.get("latitude")) and pd.notna(mejor.get("longitude"))
 
     return {
         "entity_id": mejor["entity_id"],
@@ -54,6 +56,9 @@ def _mejor_de_tipo(perfil: pd.DataFrame, tipo: str) -> dict | None:
         "pct_positivo_general": round(float(mejor["pct_positivo_general"]), 4),
         "n_resenas": int(mejor["n_resenas"]),
         "volumen_relativo": round(float(mejor["volumen_relativo"]), 4),
+        "latitud": round(float(mejor["latitude"]), 6) if tiene_ubicacion else None,
+        "longitud": round(float(mejor["longitude"]), 6) if tiene_ubicacion else None,
+        "fuente_ubicacion": mejor["coordinate_source"] if tiene_ubicacion else None,
     }
 
 

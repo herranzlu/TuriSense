@@ -9,9 +9,10 @@ const TOP_N_MAXIMO = 200;
 
 // Dos aspectos se prestan a confusión si se leen como si fueran un filtro físico
 // (kilómetros, euros) en vez de lo que de verdad son: qué tan bien habla la gente de
-// eso en sus reseñas. No hay coordenadas ni precio en euros en ningún fichero de
-// origen, así que aclararlo aquí es más honesto que dejar que alguien crea que 0.5
-// en "Ubicación" significa "a 5 km de mi casa".
+// eso en sus reseñas. Aunque ahora hay coordenadas reales por entity_id (ver
+// entity_id_ubicacion_precisa.csv), no se usan como filtro de distancia ni el
+// perfil trae un precio en euros, así que aclararlo aquí sigue siendo más honesto
+// que dejar que alguien crea que 0.5 en "Ubicación" significa "a 5 km de mi casa".
 const ACLARACION_ASPECTO = {
   ubicacion: "valoración de la zona en las reseñas, no distancia en km",
   precio: "valoración de la relación calidad-precio, no un importe en euros",
@@ -32,8 +33,9 @@ async function poblarFiltros() {
   el("rec-territorio").insertAdjacentHTML("afterbegin", `<option value="todas" selected>Toda España</option>`);
 
   // Ciudades agrupadas por CCAA (con <optgroup>): son más de 300, una lista plana
-  // sería inmanejable. No hay coordenadas para filtrar por "cerca de mí" de verdad,
-  // así que la ciudad es el proxy más honesto que permiten los datos.
+  // sería inmanejable. El filtro sigue siendo por ciudad, no por cercanía a un punto
+  // exacto (eso sería una función nueva de "buscar cerca de mí", no solo mostrar la
+  // coordenada ya disponible); la ciudad sigue siendo el filtro real de esta pantalla.
   const porCcaa = {};
   for (const c of filtros.ciudades) (porCcaa[c.ccaa] ??= []).push(c);
   el("rec-ciudad").innerHTML =
@@ -90,12 +92,19 @@ function leerPreferencias(topN) {
   };
 }
 
-// Con nombre real (hoteles, restauración, ocio: todo lo que no viene de Airbnb),
-// buscar "nombre + ciudad" en Google Maps lleva casi siempre directo al sitio exacto,
-// sin necesitar coordenadas (no hay ninguna en los datos de origen). Sin nombre real
-// (Airbnb no lo cede como dato reutilizable), la búsqueda por tipo + ciudad sigue
-// siendo lo más concreto que se puede ofrecer sin fabricar una dirección falsa.
+// Con ubicación precisa (data/entity_id_ubicacion_precisa.csv, cruzada por entity_id
+// en el backend: ver _con_ubicacion_precisa en recomendador.py), el enlace apunta a
+// la coordenada exacta de la fuente original, no a un centroide. Sin ella (2,3% de
+// los lugares, o cuando tampoco hay nombre real), "nombre + ciudad" o "tipo + ciudad"
+// sigue siendo lo más concreto que se puede ofrecer sin fabricar una ubicación.
+function tieneUbicacionPrecisa(l) {
+  return l.latitud !== null && l.latitud !== undefined && l.longitud !== null && l.longitud !== undefined;
+}
+
 function enlaceGoogleMaps(l) {
+  if (tieneUbicacionPrecisa(l)) {
+    return `https://www.google.com/maps/search/?api=1&query=${l.latitud}%2C${l.longitud}`;
+  }
   const lugar = l.ciudad ?? l.ccaa;
   const consulta = l.nombre ? `${l.nombre}, ${lugar}` : `${l.tipo_alojamiento} en ${lugar}, ${l.ccaa}`;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(consulta)}`;
@@ -109,7 +118,13 @@ function tarjetaLugar(l) {
   // ciudad sigue siendo lo más concreto que hay, como hasta ahora.
   const titulo = l.nombre ?? `${lugar}${aprox}`;
   const subtitulo = l.nombre ? `${lugar}${aprox} · ${l.tipo_alojamiento} · ${l.ccaa}` : `${l.tipo_alojamiento} · ${l.ccaa}`;
-  const textoMaps = l.nombre ? "📍 Ir a este sitio en Google Maps" : "📍 Buscar en Google Maps";
+  const conUbicacion = tieneUbicacionPrecisa(l);
+  const textoMaps = conUbicacion ? "📍 Ver ubicación exacta en Google Maps" : l.nombre ? "📍 Ir a este sitio en Google Maps" : "📍 Buscar en Google Maps";
+  // La trazabilidad (entity_id + ubicación, si la hay) siempre está en la tarjeta,
+  // solo que oculta detrás del mismo botón que ya se usaba para el código interno.
+  const detalleUbicacion = conUbicacion
+    ? `Ubicación: ${l.latitud}, ${l.longitud} (fuente: ${l.fuente_ubicacion})`
+    : "Ubicación precisa: no disponible para este entity_id.";
   return `
     <div class="lugar-card">
       <div class="lugar-card-cabecera">
@@ -123,7 +138,7 @@ function tarjetaLugar(l) {
       <div class="lugar-nota">💬 ${l.por_que}</div>
       ${notaRedistribucion}
       <a class="lugar-cta-maps" href="${enlaceGoogleMaps(l)}" target="_blank" rel="noopener">${textoMaps}</a>
-      <button type="button" class="link-btn lugar-toggle-codigo" data-entity-id="${l.entity_id}">Ver código de referencia</button>
+      <button type="button" class="link-btn lugar-toggle-codigo" data-entity-id="${l.entity_id}" data-detalle-ubicacion="${detalleUbicacion}">Ver código de referencia</button>
       <div class="lugar-codigo muted" hidden></div>
     </div>`;
 }
@@ -201,7 +216,7 @@ export async function render() {
     const codigo = boton.nextElementSibling;
     codigo.hidden = !codigo.hidden;
     if (!codigo.hidden) {
-      codigo.textContent = `Código de referencia interno: ${boton.dataset.entityId}`;
+      codigo.innerHTML = `Código de referencia interno: ${boton.dataset.entityId}<br>${boton.dataset.detalleUbicacion}`;
       boton.textContent = "Ocultar código de referencia";
     } else {
       boton.textContent = "Ver código de referencia";

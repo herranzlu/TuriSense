@@ -12,6 +12,20 @@ const ETIQUETA_ACCION = { promocionar: "Promocionar", renegociar: "Renegociar", 
 const COLOR_ACCION_TEXTO = { promocionar: "#5C7400", renegociar: "#9A1F22", vigilar: "#7A5A00", diagnosticar: "#092A5E" };
 const nombreAspecto = (key) => (etiquetaAspecto[key] ?? key.replace("_", " ")).toLowerCase();
 
+// Con ubicación precisa (entity_id_ubicacion_precisa.csv, ya cruzada en el backend
+// por entity_id: ver _con_ubicacion_precisa en recomendador.py, reutilizada aquí por
+// _mejor_de_tipo en ccaa.py y por /recomendar), el enlace apunta a la coordenada
+// exacta; si no la hay, "nombre + ciudad" o "tipo + ciudad" sigue siendo lo más
+// concreto que se puede ofrecer sin fabricar una ubicación.
+function enlaceGoogleMaps(l) {
+  if (l.latitud != null && l.longitud != null) {
+    return `https://www.google.com/maps/search/?api=1&query=${l.latitud}%2C${l.longitud}`;
+  }
+  const lugar = l.ciudad ?? l.ccaa;
+  const consulta = l.nombre ? `${l.nombre}, ${lugar}` : `${l.tipo_alojamiento} en ${lugar}, ${l.ccaa}`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(consulta)}`;
+}
+
 function panel(titulo, cuerpoHtml, extra = "") {
   return `<div class="panel ficha-bloque" ${extra}><h3>${titulo}</h3>${cuerpoHtml}</div>`;
 }
@@ -79,6 +93,7 @@ function bloqueLugar(icono, titulo, info) {
       <div class="lugar-titulo">${icono} ${titulo}</div>
       <div style="font-weight:700">${nombre}</div>
       <div class="muted" style="font-size:.82rem">${info.ciudad ?? ""} · ${fmtNum(info.n_resenas)} reseñas · ${fmtPct(info.pct_positivo_general)} positivo</div>
+      <a href="${enlaceGoogleMaps(info)}" target="_blank" rel="noopener" class="link-btn">Ver en Google Maps →</a>
     </div>`;
 }
 
@@ -87,13 +102,11 @@ function bloqueEstablecimientos(resumen, lugares) {
     .slice(0, 4)
     .map((l) => {
       const nombre = l.nombre ?? l.ciudad ?? l.ccaa;
-      const consulta = l.nombre ? `${l.nombre}, ${l.ciudad ?? l.ccaa}` : `${l.tipo_alojamiento} en ${l.ciudad ?? l.ccaa}, ${l.ccaa}`;
-      const enlace = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(consulta)}`;
       return `
       <div class="ficha-lugar">
         <div style="font-weight:700">${nombre}</div>
         <div class="muted" style="font-size:.82rem">${l.tipo_alojamiento} · ${fmtNum(l.n_resenas)} reseñas · ${fmtPct(l.pct_positivo_general)} positivo</div>
-        <a href="${enlace}" target="_blank" rel="noopener" class="link-btn">Ver en Google Maps →</a>
+        <a href="${enlaceGoogleMaps(l)}" target="_blank" rel="noopener" class="link-btn">Ver en Google Maps →</a>
       </div>`;
     })
     .join("");

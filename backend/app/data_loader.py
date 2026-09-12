@@ -74,6 +74,22 @@ def cargar_entity_nombre() -> pd.DataFrame:
 
 
 @lru_cache
+def cargar_entity_ubicacion_precisa() -> pd.DataFrame:
+    """entity_id -> latitud/longitud reales (no el centroide de la ciudad), más
+    coordinate_source para saber de qué plataforma sale cada coordenada. Ver
+    config.ENTITY_UBICACION_PRECISA_CSV. Si el fichero no está presente, se sigue
+    funcionando igual que antes (sin coordenadas): es un plus, no un requisito."""
+    columnas = ["entity_id", "latitude", "longitude", "coordinate_source"]
+    if not config.ENTITY_UBICACION_PRECISA_CSV.exists():
+        return pd.DataFrame(columns=columnas)
+    df = pd.read_csv(config.ENTITY_UBICACION_PRECISA_CSV)[columnas]
+    # entity_id es la clave de unión; si el fichero de origen trajera un entity_id
+    # repetido (no debería), nos quedamos con la primera fila para no duplicar filas
+    # en cada merge aguas abajo.
+    return df.drop_duplicates(subset="entity_id", keep="first")
+
+
+@lru_cache
 def cargar_perfil_lugares_con_ciudad() -> pd.DataFrame:
     """perfil_lugares con la ciudad ya cruzada, para poder filtrar por ciudad antes de
     puntuar (no solo para mostrarla al final del todo, como hacía el recomendador)."""

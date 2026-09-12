@@ -91,6 +91,18 @@ def _con_nombre_real(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _con_ubicacion_precisa(df: pd.DataFrame) -> pd.DataFrame:
+    """Cruza la ubicación precisa (data/entity_id_ubicacion_precisa.csv) por entity_id:
+    lat/lon reales de la fuente original (listing, ficha de hotel, Google Maps...), no
+    el centroide de la ciudad. El merge es left y la tabla de ubicaciones no tiene
+    entity_id duplicado (cargar_entity_ubicacion_precisa se asegura de ello), así que
+    no puede introducir filas de más: el número de lugares no cambia, solo se añaden
+    columnas. Donde no hay correspondencia, quedan a NaN (nunca se rellenan)."""
+    if "latitude" in df.columns:
+        return df
+    return df.merge(data_loader.cargar_entity_ubicacion_precisa(), on="entity_id", how="left")
+
+
 def _filtrar(
     df: pd.DataFrame,
     territorio: str | None,
@@ -109,9 +121,10 @@ def _filtrar(
     if tipo_experiencia and tipo_experiencia.lower() != "todas":
         df = _con_tipo_experiencia(df)
         df = df[df["tipo_experiencia"] == tipo_experiencia]
-    # No hay coordenadas en ningún fichero de origen, así que "cerca de un punto X" no
-    # se puede filtrar de verdad; la ciudad (ya cruzada en cargar_perfil_lugares_con_ciudad)
-    # es el proxy más honesto de "ubicación relativa" que los datos permiten.
+    # Filtro por ciudad, no por cercanía a un punto: aunque cada lugar ya trae su
+    # coordenada real cuando existe (_con_ubicacion_precisa, más abajo), este filtro
+    # sigue siendo por ciudad (ya cruzada en cargar_perfil_lugares_con_ciudad); un
+    # filtro de "cerca de mí" real sería una función nueva, no solo mostrar el dato.
     if ciudad and ciudad.lower() != "todas":
         df = df[df["ciudad"] == ciudad]
     return df
@@ -216,6 +229,7 @@ def recomendar(prefs: PreferenciasRecomendador):
         raise HTTPException(404, "no hay lugares para ese territorio/ciudad/tipo de experiencia")
 
     df = _con_nombre_real(df)
+    df = _con_ubicacion_precisa(df)
     top = _top(df, prefs)
     pesos_usuario = prefs.pesos_validados()
     aspectos_pedidos = sorted(pesos_usuario, key=lambda a: pesos_usuario[a], reverse=True)
@@ -225,6 +239,7 @@ def recomendar(prefs: PreferenciasRecomendador):
         nota_redistribucion = None
         if prefs.peso_anti_masificacion > 0 and r["volumen_relativo"] < 0.5:
             nota_redistribucion = f"Recibe menos reseñas que alternativas parecidas en {r['ccaa']}: opción con menos aglomeración."
+        tiene_ubicacion = pd.notna(r.get("latitude")) and pd.notna(r.get("longitude"))
         lugares.append(
             {
                 "entity_id": r["entity_id"],
@@ -241,6 +256,9 @@ def recomendar(prefs: PreferenciasRecomendador):
                 "puntuacion_final": round(float(r["puntuacion_final"]), 4),
                 "por_que": _explicar(r, aspectos_pedidos),
                 "nota_redistribucion": nota_redistribucion,
+                "latitud": round(float(r["latitude"]), 6) if tiene_ubicacion else None,
+                "longitud": round(float(r["longitude"]), 6) if tiene_ubicacion else None,
+                "fuente_ubicacion": r["coordinate_source"] if tiene_ubicacion else None,
             }
         )
 
@@ -252,7 +270,9 @@ def recomendar(prefs: PreferenciasRecomendador):
             "elige ninguno). puntuacion_final = match_score x (1 - peso_anti_masificacion x volumen_relativo). "
             "Los lugares que no vienen de Airbnb (hoteles, restauración, ocio) muestran su nombre real; los de "
             "Airbnb siguen identificándose por ciudad y tipo, porque esa plataforma no cede el nombre del anuncio "
-            "como un dato reutilizable."
+            "como un dato reutilizable. latitud/longitud vienen de entity_id_ubicacion_precisa.csv (coordenada real "
+            "de la fuente original, no el centroide de la ciudad); cubre el 97,7% de los lugares del recomendador, "
+            "así que quedan null en vez de aproximarse cuando no hay correspondencia."
         ),
     }
 
