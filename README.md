@@ -1,5 +1,7 @@
 # TuriSense: Cuadro de mando
 
+🔗 **Visualización en vivo:** https://turisense-ce6s.onrender.com
+
 Arquitectura **opción B** de la diapositiva 4/6 de `cuadro de mando .pptx`: backend
 FastAPI de solo lectura + frontend HTML/CSS/JS propio. Sin base de datos ni modelos
 ejecutándose en directo, toda la inferencia (ABSA, sentimiento) ya ocurrió antes, en
